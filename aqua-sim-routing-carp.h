@@ -16,12 +16,10 @@ namespace ns3{
 
 // class CarpHeader;
 
-
 struct Neighbor
 {
  AquaSimAddress m_neighborAddress;
-
-
+ 
  Neighbor : m_neighborAddress(0) {}
 
 };
@@ -30,7 +28,7 @@ struct Neighbor
 class AquaSimCarp : public AquaSimRouting {
 public:
   AquaSimCarp();
-  vector<AquaSimAddress> neighbor;
+  vector<Neighbor> neigh; // Relate this with Struct declared for neighbors
   static TypeId GetTypeId(void);
   int64_t AssignStreams (int64_t stream);
   virtual bool Recv(Ptr<Packet> packet, const Address &dest, uint16_t protocolNumber);
@@ -52,7 +50,7 @@ public:
   
   // Sending Data Packet
   Ptr<Packet> PrepareMessage(unsigned int dtype, AquaSimAddress to_addr, int msg_type);
-  void DataForSink(Ptr<Packet> pkt);
+
   Ptr<UniformRandomVariable> m_rand;
   Ptr<Packet> CreatePacket();
   
@@ -63,6 +61,8 @@ public:
   virtual void DoDispose();
 
 private:
+  Ptr<Ipv4>m_ipv4;
+  Time wait_time;
   AquaSimAddress sAddr;
   uint32_t m_hopCount;
   uint32_t m_num_pkt =4; // An assumption is made for the number of packets
@@ -73,8 +73,4 @@ private:
   double lq; 
   double alpha = 0.85;
 };  // class AquaSimCarp 
-
-
-
-
 } // End of ns3
