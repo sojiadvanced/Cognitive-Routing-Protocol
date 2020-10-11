@@ -30,41 +30,42 @@ struct Neighbor
 class AquaSimCarp : public AquaSimRouting {
 public:
   AquaSimCarp();
+  vector<AquaSimAddress> neighbor;
   static TypeId GetTypeId(void);
   int64_t AssignStreams (int64_t stream);
   virtual bool Recv(Ptr<Packet> packet, const Address &dest, uint16_t protocolNumber);
   int m_enableRouting;   //if true, Carp can perform routing functionality
-
+  inline AquaSimAddress RaAddr() { return AquaSimAddress::ConvertFrom(GetNetDevice()->GetAddress()); }
+  
   // Processing of Ping Packet
-  void SendPing (AquaSimAddress sAddr, uint32_t m_num_pkt, Ptr<Packet> packet, vector<Neighbor> neigh);
+  void SendPing (uint32_t m_num_pkt, vector<Neighbor> neigh);
   void RecvPing (Ptr<Packet> packet);
 
   // Processing of Hello Packet
-  void SendHello (AquaSimAddress sAddr, uint32_t m_hopCount, Ptr<Packet> packet);
+  void SendHello ();
   void RecvHello (Ptr<Packet> packet);
 
   // Processing of Pong Packet
-  void SendPong (AquaSimAddress sAddr, uint32_t m_hopCount, Ptr<Packet> packet
-		double m_energy, double m_linkQuality, AquaSimAddress dAddr.
-		uint32_t m_hopCount, uint32_t m_queue);
+  void SendPong (Ptr<Packet> packet);
   void RecvPong (Ptr<Packet> packet); // Neighbors for each node are determined here
   double Calculatelq (double lq);	// Calculate the link quality
   
   // Sending Data Packet
   Ptr<Packet> PrepareMessage(unsigned int dtype, AquaSimAddress to_addr, int msg_type);
   void DataForSink(Ptr<Packet> pkt);
-  void MACprepare(Ptr<Packet> pkt);
-  void MACsend(Ptr<Packet> pkt);
   Ptr<UniformRandomVariable> m_rand;
   Ptr<Packet> CreatePacket();
- 
+  
+  void SetLinkQuality();
+  void SetQueue();
+  void SetEnergy();
 
   virtual void DoDispose();
 
 private:
   AquaSimAddress sAddr;
   uint32_t m_hopCount;
-  uint32_t m_num_pkt;
+  uint32_t m_num_pkt =4; // An assumption is made for the number of packets
   AquaSimAddress dAddr;
   double m_energy;
   double m_linkQuality;
