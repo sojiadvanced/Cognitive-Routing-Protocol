@@ -33,12 +33,28 @@ AquaSimCarp::GetTypeId(void)
   static TypeId tid = TypeId("ns3::AquaSimCarp")
       .SetParent<AquaSimRouting>()
       .AddConstructor<AquaSimCarp>()
-      .AddAttribute ("HelloInterval", "HELLO messages emission interval.",
+      .AddAttribute ("WaitTime", "Time duration to retrieve all the PONG packets. ",
                    TimeValue (Seconds (10)),
                    MakeTimeAccessor (&AquaSimCarp::wait_time),
                    MakeTimeChecker ())
     ;
   return tid;
+}
+
+/* HELLO broadcast by the sink and other sensor nodes in the network topology */
+void
+AquaSimCarp::SendHello()
+{
+	Ptr<Packet> p = CreatePacket();
+	AquaSimHeader ash;
+	CarpHeader crh;
+	p->RemoveHeader(ash);
+	p->RemoveHeader(crh);
+	crh.SetHopCount(hopCount);
+	crh.SetSAddr(sAddr);
+	p->AddHeader(crh);
+	ash.SetNextHop(AquaSimRouting::GetBroadcast()); // This is used to broadcast the packet to all neighbors
+	Simulator::Schedule(Seconds(0.0),&AquaSimRouting::SendDown,this,p,ash.GetNextHop(),0.0);	
 }
 
 /* Node receives Hello packet, updates its hop count and re-broadcast the packet */
@@ -57,7 +73,6 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 		//m_ipv4->GetNetDevice().neigh.push_back(temp).m_neighborAddress; 
 		//Ptr<NetDevice> dev = m_ipv4->GetNetDevice (
              // m_ipv4->GetInterfaceForAddress (iface.GetLocal ()));
-		
 		uint8_t numForward = ash.GetNumForwards() + 1;
 		ash.SetNumForwards(numForward);
 		ash.SetNextHop(AquaSimRouting::GetBroadcast());
@@ -67,13 +82,14 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 	}
 }
 
+/* Used by communicating nodes to send a PING packet */
 void 
 AquaSimCarp::SendPing (uint32_t m_num_pkt, vector<Neighbor> neigh)
 {
   // The CarpHeader would most likely be a struct data type which house its attributes
   AquaSimHeader ash;
   CarpHeader crh;
-  crh.pktCounts = m_num_pkt;
+  crh.SetPktCount(m_num_pkt); // Set the number of packets to be sent 
   Ptr<Packet> p = Create<Packet>();
   ash.SetSAddr(RaAddr()); // This is used to identify the source node ?
   ash.SetDirection(AquaSimHeader::DOWN);
@@ -98,12 +114,14 @@ AquaSimCarp::RecvPing (Ptr<Packet> p)
 	SendPong(p);
 }
 
+/* The energy levels of the nodes are set using this module */
 void
 AquaSimCarp::SetEnergy()
 {
 	m_energy = 40.0; 	// This is an assumed value of the power rating ( W or kW)
 }
 
+/* This is used to set the maximum value of the receiver's buffer for congestion control */
 void
 AquaSimCarp::SetQueue()
 {
@@ -116,6 +134,7 @@ AquaSimCarp::SetLinkQuality
 	// The logic behind the link quality is set here
 }
 
+/* This is used to send PONG packets by neighbors to its sender */
 void
 AquaSimCarp::SendPong(Ptr<Packet> p)
 {
@@ -149,7 +168,7 @@ AquaSimCarp::SendPong(Ptr<Packet> p)
   Simulator::Schedule(jitter,&AquaSimRouting::SendDown,this,p,dest_addr,jitter);
 }
 
-/* A node receives a PONG packet, select the neighbor with max lq and forwards the data packet */
+/* A node receives a PONG packet, selects the neighbor with max lq and forwards the data packet */
 void
 AquaSimCarp::RecvPong(Ptr<Packet> p)
 {
