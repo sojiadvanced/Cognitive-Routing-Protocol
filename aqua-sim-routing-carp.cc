@@ -70,9 +70,13 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 		AquaSimAddress temp = ash.GetSAddr(); // Neighbor of the receiving node
 		
 		// The whole idea here is for nodes to keep updating their neighbors anytime a HELLO packet  is received
-		//m_ipv4->GetNetDevice().neigh.push_back(temp).m_neighborAddress; 
-		//Ptr<NetDevice> dev = m_ipv4->GetNetDevice (
-             // m_ipv4->GetInterfaceForAddress (iface.GetLocal ()));
+		m_if  = m_ipv4->GetInterfaceForAddress (iface.GetLocal ())); // This is used to retrive the interface id for the local address
+		Ptr<NetDevice> dev = m_ipv4->GetNetDevice(m_if); // The netdevice for the local address interface is obtained 
+        
+        /* neighbor cache that is associated with a NetDevice)
+         * src: https://www.nsnam.org/doxygen/classns3_1_1_ipv4.html#details
+         * */
+        m_nodeNeighbor[dev] = m_neigh->m_neighborAddress.push_back(temp); // This maps the sender address and updates the vector holding the neighbor address of the interface
 		uint8_t numForward = ash.GetNumForwards() + 1;
 		ash.SetNumForwards(numForward);
 		ash.SetNextHop(AquaSimRouting::GetBroadcast());

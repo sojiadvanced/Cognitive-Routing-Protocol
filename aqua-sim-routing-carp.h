@@ -18,9 +18,9 @@ namespace ns3{
 
 struct Neighbor
 {
- AquaSimAddress m_neighborAddress;
- 
- Neighbor : m_neighborAddress(0) {}
+	
+	vector<AquaSimAddress> m_neighborAddress;
+	Neighbor : m_neighborAddress(0) {}
 
 };
 
@@ -28,7 +28,9 @@ struct Neighbor
 class AquaSimCarp : public AquaSimRouting {
 public:
   AquaSimCarp();
-  vector<Neighbor> neigh; // Relate this with Struct declared for neighbors
+  //vector<Neighbor> neigh; // Relate this with Struct declared for neighbors
+  std::map<Ptr<NetDevice>, Neighbor>m_nodeNeighbor; // This is used to retrieve the neighbors of a node via the netdevice
+  Neighbor* m_neigh; // This is a pointer to the struct holding the neighbors of each node
   static TypeId GetTypeId(void);
   int64_t AssignStreams (int64_t stream);
   virtual bool Recv(Ptr<Packet> packet, const Address &dest, uint16_t protocolNumber);
@@ -62,6 +64,7 @@ public:
 
 private:
   Ptr<Ipv4>m_ipv4;
+  uint32_t m_if; // Used to retrieve the interface from the address
   Time wait_time;
   AquaSimAddress sAddr;
   uint32_t m_hopCount;

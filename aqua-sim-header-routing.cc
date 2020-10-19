@@ -131,6 +131,101 @@ DRoutingHeader::SetEntryNum(uint32_t entryNum)
 }
 
 /*
+* Channel-aware Routing Protocol
+*/
+NS_LOG_COMPONENT_DEFINE("CarpHeader");
+NS_OBJECT_ENSURE_REGISTERED(CarpHeader);
+
+CarpHeader::CarpHeader()
+{
+}
+
+CarpHeader::~CarpHeader()
+{
+}
+
+TypeId
+CarpHeader::GetTypeId()
+{
+  static TypeId tid = TypeId("ns3::CarpHeader")
+    .SetParent<Header>()
+    .AddConstructor<CarpHeader>()
+  ;
+  return tid;
+}
+
+uint32_t
+CarpHeader::Deserialize(Buffer::Iterator start)
+{
+  Buffer::Iterator i = start;
+  m_pktSrc = (AquaSimAddress) i.ReadU16();
+  m_entryNum = i.ReadU32();
+  m_numPkt = i.ReadU8();
+  m_hopCount = i.ReadU8();
+  return GetSerializedSize();
+}
+
+uint32_t
+CarpHeader::GetSerializedSize(void) const
+{
+  //reserved bytes for header
+  return (2+3+1+4);
+}
+
+void
+CarpHeader::Serialize(Buffer::Iterator start) const
+{
+  Buffer::Iterator i = start;
+  i.WriteU16(m_pktSrc.GetAsInt());
+  i.WriteU32(m_entryNum);
+  i.WriteU8(m_hopCount);
+  i.WriteU8(m_numPkt);
+}
+
+void
+CarpHeader::Print(std::ostream &os) const
+{
+  os << "Carp Routing Header is: PktSrc=" << " EntryNum=" << m_entryNum << "\n";
+}
+
+TypeId
+CarpHeader::GetInstanceTypeId(void) const
+{
+  return GetTypeId();
+}
+
+AquaSimAddress
+CarpHeader::GetPktSrc()
+{
+  return m_pktSrc;
+}
+AquaSimAddress
+CarpHeader::GetNextHop()
+{
+  return m_nextHop;
+}
+uint32_t
+CarpHeader::GetPktCount()
+{
+  return m_num_pkt; // Try to initialize this variable in the header.h file --> m_numPkt(4)
+}
+void
+CarpHeader::SetNextHop(AquaSimAddress nextHop)
+{
+  return m_nextHop;
+}
+void
+CarpHeader::SetPktSrc(AquaSimAddress pktSrc)
+{
+  m_pktSrc = pktSrc;
+}
+void
+CarpHeader::SetHopCount(uint8_t hopCount)
+{
+  m_hopCount = hopCount;
+}
+
+/*
 * Vector Based Routing
 */
 NS_OBJECT_ENSURE_REGISTERED(VBHeader);

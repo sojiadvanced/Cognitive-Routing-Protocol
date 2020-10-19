@@ -108,8 +108,8 @@ class CarpHeader : public Header
 	
 protected:
 	AquaSimAddress sAddr;
-	uint32_t m_hopCount;
-	uint32_t m_num_pkt =4; // An assumption is made for the number of packets
+	uint8_t m_hopCount;
+	uint8_t m_num_pkt =4; // An assumption is made for the number of packets
 	AquaSimAddress dAddr;
 	double m_energy;
 	double m_linkQuality;
