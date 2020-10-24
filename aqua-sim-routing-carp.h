@@ -32,9 +32,7 @@ public:
   std::map<Ptr<NetDevice>, Neighbor>m_nodeNeighbor; // This is used to retrieve the neighbors of a node via the netdevice
   Neighbor* m_neigh; // This is a pointer to the struct holding the neighbors of each node
   static TypeId GetTypeId(void);
-  int64_t AssignStreams (int64_t stream);
-  virtual bool Recv(Ptr<Packet> packet, const Address &dest, uint16_t protocolNumber);
-  int m_enableRouting;   //if true, Carp can perform routing functionality
+  virtual bool Recv(Ptr<Packet> packet);
   inline AquaSimAddress RaAddr() { return AquaSimAddress::ConvertFrom(GetNetDevice()->GetAddress()); }
   
   // Processing of Ping Packet
@@ -48,17 +46,10 @@ public:
   // Processing of Pong Packet
   void SendPong (Ptr<Packet> packet);
   void RecvPong (Ptr<Packet> packet); // Neighbors for each node are determined here
-  double Calculatelq (double lq);	// Calculate the link quality
+  //double Calculatelq (double lq);	// Calculate the link quality
   
   // Sending Data Packet
-  Ptr<Packet> PrepareMessage(unsigned int dtype, AquaSimAddress to_addr, int msg_type);
-
   Ptr<UniformRandomVariable> m_rand;
-  Ptr<Packet> CreatePacket();
-  
-  void SetLinkQuality();
-  void SetQueue();
-  void SetEnergy();
 
   virtual void DoDispose();
 

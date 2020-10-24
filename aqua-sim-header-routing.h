@@ -84,38 +84,77 @@ class CarpHeader : public Header
 {
 	CarpHeader();
 	virtual ~CarpHeader();
-	static TypedId GetTypeId();
-	
-	// Inherited Methods
+	static TypeId GetTypeId();
+
 	virtual uint32_t GetSerializedSize(void) const;
-	virtual void Serialize (Buffer::Iterator start) const;
-	virtual uint32_t Deserialize (Buffer::Iterator start);
 	virtual void Print (std::ostream &os) const;
-	virtual TypeId GetInstanceTypeId(void) const;
 	
 	// Setters
-	void SetMessType(uint8_t messType);
 	void SetSAddr(AquaSimAddress senderAddr);
-	void SetNextHop(AquaSimAddress nextHop);
-	void SetPktCount(uint32_t num_pkt);
-	void SetHopCount(uint32_t hopCount); // Set a default value of Zero (0) for the sink
+	void SetDAddr(AquaSimAddress destAddr);
+	void SetPktCount(uint8_t num_pkt);
+	void SetHopCount(uint8_t hopCount); // Set a default value of Zero (0) for the sink
+	void SetLinkQuality(void);
+	void SetQueue(uint8_t queue);
+	void SetEnergy(double energy);
 	
 	// Getters
-	uint8_t GetMessType();
 	AquaSimAddress GetSAddr();
-	uint32_t GetPktCount();
-	uint32_t GetHopCount();
+	AquaSimAddress GetDAddr();
+	uint8_t GetPktCount();
+	uint8_t GetHopCount();
+	uint8_t GetQueue();
+	double GetEnergy();
+	double GetLinkQuality();
 	
 protected:
-	AquaSimAddress sAddr;
+	AquaSimAddress m_sAddr;
 	uint8_t m_hopCount;
-	uint8_t m_num_pkt =4; // An assumption is made for the number of packets
-	AquaSimAddress dAddr;
+	uint8_t m_numPkt =4; // An assumption is made for the number of packets
+	AquaSimAddress m_dAddr;
 	double m_energy;
 	double m_linkQuality;
 	uint32_t m_queue;
 	
 }; // class CarpHeader
+
+
+class HelloHeader : public CarpHeader
+{
+	HelloHeader();
+	virtual ~HelloHeader();
+	static TypeId GetTypeId();
+public:
+	 void Serialize (Buffer::Iterator start) const;
+	 uint32_t Deserialize (Buffer::Iterator start);
+	 TypeId GetInstanceTypeId(void) const;	
+}
+
+
+class PingHeader : public CarpHeader
+{
+	PingHeader();
+	virtual ~PingHeader();
+	static TypeId GetTypeId();
+public:
+	 void Serialize (Buffer::Iterator start) const;
+	 uint32_t Deserialize (Buffer::Iterator start);
+	 TypeId GetInstanceTypeId(void) const;
+}
+
+
+class PongHeader : public CarpHeader
+{
+	PongHeader();
+	virtual ~PongHeader();
+	static TypeId GetTypeId();
+public:
+	 void Serialize (Buffer::Iterator start) const;
+	 uint32_t Deserialize (Buffer::Iterator start);
+	 TypeId GetInstanceTypeId(void) const;
+}
+
+
  /**
   * \brief Vector Based routing header
   * Protocol paper: engr.uconn.edu/~jcui/UWSN_papers/vbf_networking2006.pdf

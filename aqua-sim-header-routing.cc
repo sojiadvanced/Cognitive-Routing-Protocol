@@ -158,8 +158,8 @@ uint32_t
 CarpHeader::Deserialize(Buffer::Iterator start)
 {
   Buffer::Iterator i = start;
-  m_pktSrc = (AquaSimAddress) i.ReadU16();
-  m_entryNum = i.ReadU32();
+  m_sAddr = (AquaSimAddress)i.ReadU16();
+  m_dAddr = (AquaSimAddress)i.ReadU16();
   m_numPkt = i.ReadU8();
   m_hopCount = i.ReadU8();
   return GetSerializedSize();
@@ -169,15 +169,15 @@ uint32_t
 CarpHeader::GetSerializedSize(void) const
 {
   //reserved bytes for header
-  return (2+3+1+4);
+  return (2+4);
 }
 
 void
 CarpHeader::Serialize(Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
-  i.WriteU16(m_pktSrc.GetAsInt());
-  i.WriteU32(m_entryNum);
+  i.WriteU16(m_sAddr.GetAsInt());
+  i.WriteU16(m_dAddr.GetAsInt());
   i.WriteU8(m_hopCount);
   i.WriteU8(m_numPkt);
 }
@@ -185,7 +185,7 @@ CarpHeader::Serialize(Buffer::Iterator start) const
 void
 CarpHeader::Print(std::ostream &os) const
 {
-  os << "Carp Routing Header is: PktSrc=" << " EntryNum=" << m_entryNum << "\n";
+  os << "Carp Routing Header is: " <<m_sAddr << " Packets count is: " << m_numPkt << "\n";
 }
 
 TypeId
@@ -195,34 +195,160 @@ CarpHeader::GetInstanceTypeId(void) const
 }
 
 AquaSimAddress
-CarpHeader::GetPktSrc()
+CarpHeader::GetSAddr()
 {
-  return m_pktSrc;
+  return m_sAddr;
 }
 AquaSimAddress
-CarpHeader::GetNextHop()
+CarpHeader::GetDAddr()
 {
-  return m_nextHop;
+  return m_dAddr;
 }
 uint32_t
 CarpHeader::GetPktCount()
 {
-  return m_num_pkt; // Try to initialize this variable in the header.h file --> m_numPkt(4)
+  return m_numPkt; // Try to initialize this variable in the header.h file --> m_numPkt(4)
 }
 void
-CarpHeader::SetNextHop(AquaSimAddress nextHop)
+CarpHeader::SetSAddr(AquaSimAddress senderAddr)
 {
-  return m_nextHop;
+  m_sAddr = senderAddr;
 }
 void
-CarpHeader::SetPktSrc(AquaSimAddress pktSrc)
+CarpHeader::SetDAddr(AquaSimAddress destAddr)
 {
-  m_pktSrc = pktSrc;
+  m_dAddr = destAddr;
 }
 void
 CarpHeader::SetHopCount(uint8_t hopCount)
 {
   m_hopCount = hopCount;
+}
+void
+CarpHeader::SetQueue(uint8_t queue)
+{
+  m_queue = queue;
+}
+void
+CarpHeader::SetEnergy(double energy)
+{
+  m_energy = energy;
+}
+
+/* Hello Header Class Definition */
+HelloHeader::HelloHeader()
+{
+}
+HelloHeader::~HelloHeader()
+{
+}
+TypeId
+HelloHeader::GetTypeId()
+{
+	static TypeId tid = TypeId("ns3::HelloHeader")
+    .SetParent<CarpHeader>()
+    .AddConstructor<HelloHeader>();
+    return tid;
+}
+void
+HelloHeader::Serialize(Buffer::Iterator start)
+{
+  Buffer::Iterator i = start;
+  i.WriteU16(m_sAddr.GetAsInt());
+  i.WriteU8(m_hopCount);
+}
+uint32_t
+HelloHeader::Deserialize(Buffer::Iterator start)
+{
+  Buffer::Iterator i = start;
+  m_sAddr = (AquaSimAddress)i.ReadU16();
+  m_hopCount = i.ReadU8();
+  return GetSerializedSize();
+}
+TypeId
+HelloHeader::GetInstanceTypeId(void) const
+{
+  return GetTypeId();
+}
+
+/* Ping Header Class Definition */
+PingHeader::PingHeader()
+{
+}
+PingHeader::~PingHeader()
+{
+}
+TypeId
+PingHeader::GetTypeId()
+{
+	static TypeId tid = TypeId("ns3::PingHeader")
+    .SetParent<CarpHeader>()
+    .AddConstructor<PingHeader>();
+    return tid;
+}
+void
+PingHeader::Serialize(Buffer::Iterator start)
+{
+  Buffer::Iterator i = start;
+  i.WriteU16(m_sAddr.GetAsInt());
+  i.WriteU8(m_numPkt);
+}
+uint32_t
+PingHeader::Deserialize(Buffer::Iterator start)
+{
+  Buffer::Iterator i = start;
+  m_sAddr = (AquaSimAddress)i.ReadU16();
+  m_numPkt = i.ReadU8();
+  return GetSerializedSize();
+}
+TypeId
+PingHeader::GetInstanceTypeId(void) const
+{
+  return GetTypeId();
+}
+
+/* Pong Header Classification */
+PongHeader:: PongHeader()
+{
+}
+PongHeader::~PongHeader()
+{
+}
+TypeId
+PongHeader::GetTypeId()
+{
+	static TypeId tid = TypeId("ns3::PongHeader")
+    .SetParent<CarpHeader>()
+    .AddConstructor<PongHeader>();
+    return tid;
+}
+void
+PongHeader::Serialize(Buffer::Iterator start)
+{
+  Buffer::Iterator i = start;
+  i.WriteU16(m_sAddr.GetAsInt());
+  i.WriteU16(m_dAddr.GetAsInt());
+  i.WriteU8(m_queue);
+  i.WriteU8(m_energy); // Review how to serialize a data type of double
+  i.WriteU8(m_hopCount);
+  i.WriteU8(m_linkQuality); // Review how to serialize a data type of double
+}
+uint32_t
+PingHeader::Deserialize(Buffer::Iterator start)
+{
+  Buffer::Iterator i = start;
+  m_sAddr = (AquaSimAddress)i.ReadU16();
+  m_dAddr = (AquaSimAddress)i.ReadU16();
+  m_queue = i.ReadU8();
+  m_energy= i.ReadU8(); // Review how to deserialize a data type of double
+  m_hopCount = i.ReadU8();
+  m_linkQuality = i.ReadU8(); // Review how to deserialize a data type of double
+  return GetSerializedSize();
+}
+TypeId
+PingHeader::GetInstanceTypeId(void) const
+{
+  return GetTypeId();
 }
 
 /*

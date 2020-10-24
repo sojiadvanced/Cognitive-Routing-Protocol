@@ -1,6 +1,5 @@
 /* Main file for channel-aware routing protocol */
 
-
 #include "aqua-sim-routing-carp.h"
 #include "aqua-sim-header-routing.h"
 #include "aqua-sim-header.h"
@@ -47,13 +46,16 @@ AquaSimCarp::SendHello()
 {
 	Ptr<Packet> p = CreatePacket();
 	AquaSimHeader ash;
-	CarpHeader crh;
-	p->RemoveHeader(ash);
-	p->RemoveHeader(crh);
-	crh.SetHopCount(hopCount);
-	crh.SetSAddr(sAddr);
-	p->AddHeader(crh);
+	//CarpHeader crh;
+	HelloHeader hh; // This is an object of the HelloHeader
+	//p->RemoveHeader(ash);
+	//p->RemoveHeader(crh);
+	hh.SetHopCount(hopCount);
+	hh.SetSAddr(sAddr);
+	
+	p->AddHeader(hh);
 	ash.SetNextHop(AquaSimRouting::GetBroadcast()); // This is used to broadcast the packet to all neighbors
+	p->AddHeader(ash);
 	Simulator::Schedule(Seconds(0.0),&AquaSimRouting::SendDown,this,p,ash.GetNextHop(),0.0);	
 }
 
@@ -64,10 +66,10 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 	if(p)
 	{
 		AquaSimHeader ash;
-		Ipv4Header iph;
+		HelloHeader hh;
 		p->RemoveHeader(ash);
-		p->RemoveHeader(iph);
-		AquaSimAddress temp = ash.GetSAddr(); // Neighbor of the receiving node
+		p->RemoveHeader(hh);
+		AquaSimAddress temp = hh.GetSAddr(); // Neighbor of the receiving node
 		
 		// The whole idea here is for nodes to keep updating their neighbors anytime a HELLO packet  is received
 		m_if  = m_ipv4->GetInterfaceForAddress (iface.GetLocal ())); // This is used to retrive the interface id for the local address
@@ -80,7 +82,7 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 		uint8_t numForward = ash.GetNumForwards() + 1;
 		ash.SetNumForwards(numForward);
 		ash.SetNextHop(AquaSimRouting::GetBroadcast());
-		p->AddHeader(iph);
+		p->AddHeader(hh);
 		p->AddHeader(ash);
 		Simulator::Schedule(Seconds(0.0),&AquaSimRouting::SendDown,this,p,ash.GetNextHop(),0.0);
 	}
@@ -92,13 +94,14 @@ AquaSimCarp::SendPing (uint32_t m_num_pkt, vector<Neighbor> neigh)
 {
   // The CarpHeader would most likely be a struct data type which house its attributes
   AquaSimHeader ash;
-  CarpHeader crh;
-  crh.SetPktCount(m_num_pkt); // Set the number of packets to be sent 
+  PingHeader ph; // Header for the PING packet
+  ph.SetPktCount(m_num_pkt); // Set the number of packets to be sent 
   Ptr<Packet> p = Create<Packet>();
+  ph.SetSAddr(RaAddr());
   ash.SetSAddr(RaAddr()); // This is used to identify the source node ?
   ash.SetDirection(AquaSimHeader::DOWN);
  	
-  p->AddHeader(crh);  
+  p->AddHeader(ph);  
   // This iterates through all the neighbors of a node and send the PING packet
   for (vector<Neighbor> iterator it = neigh.begin(); it!= neigh.end(); it++)
   {
@@ -117,26 +120,33 @@ AquaSimCarp::RecvPing (Ptr<Packet> p)
 {
 	SendPong(p);
 }
-
-/* The energy levels of the nodes are set using this module */
-void
-AquaSimCarp::SetEnergy()
+/* Forward Data Packet */
+void 
+AquaSimCarp::ForwardData(Ptr<Packet> p)
 {
-	m_energy = 40.0; 	// This is an assumed value of the power rating ( W or kW)
+	AquaSimAddress ash;
+	p->RemoveHeader(ash);
+	Simulator::Schedule(Seconds(0.0),&AquaSimRouting::SendDown,this,p,ash.GetNextHop(),0.0);
 }
+///* The energy levels of the nodes are set using this module */
+//void
+//AquaSimCarp::SetEnergy()
+//{
+	//m_energy = 40.0; 	// This is an assumed value of the power rating ( W or kW)
+//}
 
-/* This is used to set the maximum value of the receiver's buffer for congestion control */
-void
-AquaSimCarp::SetQueue()
-{
-	m_queue = 4; 	// Every node can accommodate 4 packets in its buffer
-}
+///* This is used to set the maximum value of the receiver's buffer for congestion control */
+//void
+//AquaSimCarp::SetQueue()
+//{
+	//m_queue = 4; 	// Every node can accommodate 4 packets in its buffer
+//}
 
-void
-AquaSimCarp::SetLinkQuality
-{
-	// The logic behind the link quality is set here
-}
+//void
+//AquaSimCarp::SetLinkQuality
+//{
+	//// The logic behind the link quality is set here
+//}
 
 /* This is used to send PONG packets by neighbors to its sender */
 void
@@ -144,29 +154,29 @@ AquaSimCarp::SendPong(Ptr<Packet> p)
 {
   NS_LOG_FUNCTION(this);
   AquaSimHeader ash;
-  CarpHeader crh;
+  PingHeader ph; // This is the header used to encapsulate the PING packet
+  PongHeader poh;	// Header for PONG packets. This header inherits some of the base CarpHeader methods
   Ipv4Header iph; // The CARP header is built on top of the Ipv4Header
-  AquaSimPtTag ptag;
-  p->RemoveHeader(ash);
-  p->RemoveHeader(crh);
   
-  AquaSimAddress dest_addr = ash.GetSAddr();
+  p->RemoveHeader(ash);
+  p->RemoveHeader(ph);
+  
+  AquaSimAddress dest_addr = ph.GetSAddr();
 
 	// Used to set attributes of the PONG packet
-	crh.SetPktSrc(RaAddr());  // Set the source of the packet
-	crh.SetLinkQuality() // Computes the values of lq to all nodes using the position vector
-	crh.SetHopCount(); // Used to determine the hop count of the node from the sink
-	crh.SetQueue(); // Indicates the available buffer space at the sender (This could be symmetric across all nodes)
-	crh.SetEnergy();
+	poh.SetSAddr(RaAddr());  // Set the source of the packet
+	poh.SetLinkQuality() // Computes the values of lq to all nodes using the position vector
+	poh.SetHopCount(); // Used to determine the hop count of the node from the sink
+	poh.SetQueue(m_queue); // Indicates the available buffer space at the sender (This could be symmetric across all nodes)
+	poh.SetEnergy(m_energy);
+	poh.SetDAddr(dest_addr);
 	
 	ash.SetSAddr(RaAddr());
 	ash.SetDAddr(dest_addr); // This should be sent to the sender of the PING instead of broadcast 
 	ash.SetDirection(AquaSimHeader::DOWN);
-	ash.SetSize(IP_HDR_LEN + crh.GetPktLen()+size); // Get the application layer size, Dynamic header and IP header
 	ash.SetNextHop(dest_addr); // The one hop destination is set as the next hop
-	
   
-  p->AddHeader(crh);
+  p->AddHeader(poh);
   p->AddHeader(ash);
   Time jitter = Seconds(m_rand->GetValue()*0.5);
   Simulator::Schedule(jitter,&AquaSimRouting::SendDown,this,p,dest_addr,jitter);
@@ -179,15 +189,15 @@ AquaSimCarp::RecvPong(Ptr<Packet> p)
 	// Strip each received packet and obtain the lq
 	// The node with the maximum lq is selected as the relay node which is used as the DAddr() 
 	AquaSimHeader ash;
-	CarpHeader crh;
+	PongHeader poh;
 	p->RemoveHeader(ash);
-	p->PeekHeader(crh);
+	p->PeekHeader(poh);
 	
 	Time wait_time; // The wait time must keep decrementing before the sender determines the max lq
 	double lq_check = 0.0;
-	if (wait_time != 0.0)
+	while (wait_time != 0.0)
 	{
-	  	double neighbor_lq = crh.GetLinkQuality();
+	  	double neighbor_lq = poh.GetLinkQuality();
 	  	if (lq_check < neighbor_lq)
 	  	{
 			lq_check = neighbor_lq;
@@ -197,35 +207,28 @@ AquaSimCarp::RecvPong(Ptr<Packet> p)
 		}
 	  	wait_time--;	
 	}
-	else
-	{
-		p->AddHeader(ash);
-	}
-	ForwardData(p); // This module would be worked upon
-	
+	ForwardData(p); // This module would be worked upon	
 }
 
 // This is used for receiving actual data packets
 bool
-AquaSimCarp::Recv(Ptr<Packet> p, const Address &dest, uint16_t protocolNumber)
+AquaSimCarp::Recv(Ptr<Packet> p)
 {
   AquaSimHeader ash;
   Ipv4Header iph;
   CarpHeader crh;
-  AquaSimPtTag ptag;
-  if (p->GetSize() <= 32)  // What check is this ? 
-  {
-    p->AddHeader(iph);
-    p->AddHeader(crh);
-    p->AddHeader(ash);
-  }
+//  if (p->GetSize() <= 32)  // What check is this ? 
+ // {
+  //  p->AddHeader(iph);
+  //  p->AddHeader(crh);
+  //  p->AddHeader(ash);
+ // }
 	p->RemoveHeader(ash);
-    p->PeekPacketTag(ptag);
 	// This checks if the source address equals the nodeID
 	if (ash.GetSAddr() == RaAddr()) {
 		// If there exists a loop, must drop the packet, eliminating loop of infinity
 		if (ash.GetNumForwards() > 0) {
-      NS_LOG_INFO("Recv: there exists a loop, dropping packet=" << p);
+      NS_LOG_INFO("Recv: there exists a loop, dropping packet =" << p);
       p=0;
 			return false;
 		}
@@ -243,7 +246,6 @@ AquaSimCarp::Recv(Ptr<Packet> p, const Address &dest, uint16_t protocolNumber)
   ash.SetNumForwards(numForward);
   p->AddHeader(ash);
   
-
   return true;
 }
 
