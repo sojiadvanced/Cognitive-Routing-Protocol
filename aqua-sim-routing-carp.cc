@@ -92,7 +92,7 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 void 
 AquaSimCarp::SendPing (uint32_t m_num_pkt, vector<Neighbor> neigh)
 {
-  // The CarpHeader would most likely be a struct data type which house its attributes
+  // The CarpHeader would most likely be a struct data type which houses its attributes
   AquaSimHeader ash;
   PingHeader ph; // Header for the PING packet
   ph.SetPktCount(m_num_pkt); // Set the number of packets to be sent 
@@ -156,7 +156,7 @@ AquaSimCarp::SendPong(Ptr<Packet> p)
   AquaSimHeader ash;
   PingHeader ph; // This is the header used to encapsulate the PING packet
   PongHeader poh;	// Header for PONG packets. This header inherits some of the base CarpHeader methods
-  Ipv4Header iph; // The CARP header is built on top of the Ipv4Header
+  // Ipv4Header iph; // The CARP header is built on top of the Ipv4Header
   
   p->RemoveHeader(ash);
   p->RemoveHeader(ph);
@@ -165,7 +165,7 @@ AquaSimCarp::SendPong(Ptr<Packet> p)
 
 	// Used to set attributes of the PONG packet
 	poh.SetSAddr(RaAddr());  // Set the source of the packet
-	poh.SetLinkQuality() // Computes the values of lq to all nodes using the position vector
+	poh.SetLinkQuality(Ptr<Neighbor> neig) // Computes the values of lq to all nodes using the position vector (Args: NetDevice, Nodes, Neighbors)
 	poh.SetHopCount(); // Used to determine the hop count of the node from the sink
 	poh.SetQueue(m_queue); // Indicates the available buffer space at the sender (This could be symmetric across all nodes)
 	poh.SetEnergy(m_energy);
@@ -251,3 +251,5 @@ AquaSimCarp::Recv(Ptr<Packet> p)
 
 
 // How methods are called that compute the fields in the packet headers for PONG
+
+//m_pktTimer.Schedule(Seconds(0.0000001+10*m_rand->GetValue()));

@@ -28,7 +28,6 @@ struct Neighbor
 class AquaSimCarp : public AquaSimRouting {
 public:
   AquaSimCarp();
-  //vector<Neighbor> neigh; // Relate this with Struct declared for neighbors
   std::map<Ptr<NetDevice>, Neighbor>m_nodeNeighbor; // This is used to retrieve the neighbors of a node via the netdevice
   Neighbor* m_neigh; // This is a pointer to the struct holding the neighbors of each node
   static TypeId GetTypeId(void);

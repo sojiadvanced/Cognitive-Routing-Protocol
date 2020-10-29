@@ -93,8 +93,8 @@ class CarpHeader : public Header
 	void SetSAddr(AquaSimAddress senderAddr);
 	void SetDAddr(AquaSimAddress destAddr);
 	void SetPktCount(uint8_t num_pkt);
-	void SetHopCount(uint8_t hopCount); // Set a default value of Zero (0) for the sink
-	void SetLinkQuality(void);
+	void SetHopCount(Ptr<Packet> p); // Set a default value of Zero (0) for the sink
+	void SetLinkQuality(Ptr<Neighbor> nei);
 	void SetQueue(uint8_t queue);
 	void SetEnergy(double energy);
 	

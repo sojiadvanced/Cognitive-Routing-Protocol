@@ -219,10 +219,22 @@ CarpHeader::SetDAddr(AquaSimAddress destAddr)
 {
   m_dAddr = destAddr;
 }
+// This method checks the packet to determine the hop count by the number of forwards
+// It adds 1 to the number of forwards before re-encapsulation
 void
-CarpHeader::SetHopCount(uint8_t hopCount)
+CarpHeader::SetHopCount(Ptr<Packet> p)
 {
-  m_hopCount = hopCount;
+  AquaSimHeader ash;
+  p->RemoveHeader(ash);
+  
+  m_hopCount = ash.GetNumForwards();
+  ash.SetNumForwards(ash.GetNumForwars() + 1);
+  p->AddHeader(ash);
+}
+void
+CarpHeader::GetHopCount()
+{
+	return m_hopCount;
 }
 void
 CarpHeader::SetQueue(uint8_t queue)
@@ -233,6 +245,66 @@ void
 CarpHeader::SetEnergy(double energy)
 {
   m_energy = energy;
+}
+void
+CarpHeader::SetLinkQuality(Ptr<Neighbor> nei)
+{
+	// Obtain the neighor of the nodes
+	// Send 4 packets each to all nodes
+	// Wait for acknowledgment count
+	vector<double_t>max_lq;
+	AquaSimAddress ash;
+	Time jitter = Seconds(m_rand->GetValue()*0.5);
+	Ptr<Packet> p = Create<Packet>();
+	uint8_t numForwards = 1;
+	
+	// Send 4 packets each to all neighbor nodes
+	for (vector<AquaSimAddress>::iterator it = nei->m_neighborAddress.begin(); it!= nei->m_neighborAddress.end();
+	it++)
+	{
+		for (uint8_t i = 0; i< 4; i++)
+		{
+			ash.SetNumForwards(numForwards);
+			ash.SetDAddr(*it);
+			ash.SetNextHop(*it);
+			p->AddHeader(ash);
+			Simulator::Schedule(jitter, &AquaSimRouting::SendDown, this, p, ash.GetNextHop(), jitter);
+			
+			// Find a way for a random delay
+			// Simulator::Schedule(jitter);
+		}
+	}
+	// Check number of packets received each by the nodes
+	// The need to call the mac /phy layer to achieve this might be required
+	for (vector<AquaSimAddress>::iterator it = nei->m_neighborAddress.begin(); it!= nei->m_neighborAddress.end();
+	it++)
+	{
+		uint8_t counts = 0;
+		if(p)
+		{
+			AquaSimAddress nei = (*it);
+			// Check the packets received by this neighbor
+			counts++;
+		}
+		// obtain the packet success ratio for each neighbor
+		double_t psr = counts/4;
+		max_lq.push_back(psr);
+	}
+	// Obtain the maximum psr
+	sort(max_lq.begin(), max_lq.end(), greater<double_t>());
+	m_linkQuality = alpha * max_lq.front();
+	/* 
+	 * Invoke the Simulator::Schedule(0.0, &AquaSim::Send, this, p, dest);
+	 * Run a loop to send 4 packets each to the neighbor
+	 * Check each neighbor and extract the no of packets received
+	 * compute received /sent for each neighbor,
+	 *  */
+	 
+}
+double
+CarpHeader::GetLinkQuality()
+{
+	return m_linkQuality;
 }
 
 /* Hello Header Class Definition */
@@ -334,7 +406,7 @@ PongHeader::Serialize(Buffer::Iterator start)
   i.WriteU8(m_linkQuality); // Review how to serialize a data type of double
 }
 uint32_t
-PingHeader::Deserialize(Buffer::Iterator start)
+PongHeader::Deserialize(Buffer::Iterator start)
 {
   Buffer::Iterator i = start;
   m_sAddr = (AquaSimAddress)i.ReadU16();
@@ -346,7 +418,7 @@ PingHeader::Deserialize(Buffer::Iterator start)
   return GetSerializedSize();
 }
 TypeId
-PingHeader::GetInstanceTypeId(void) const
+PongHeader::GetInstanceTypeId(void) const
 {
   return GetTypeId();
 }
