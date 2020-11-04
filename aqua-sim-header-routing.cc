@@ -19,7 +19,7 @@
 */
 
 #include "aqua-sim-header-routing.h"
-
+#include <bits/stdc++.h>
 #include "ns3/log.h"
 #include "ns3/buffer.h"
 
@@ -253,9 +253,7 @@ CarpHeader::SetLinkQuality(Ptr<Neighbor> nei)
 	// Send 4 packets each to all nodes
 	// Wait for acknowledgment count
 	vector<double_t>max_lq;
-	AquaSimAddress ash;
 	Time jitter = Seconds(m_rand->GetValue()*0.5);
-	Ptr<Packet> p = Create<Packet>();
 	uint8_t numForwards = 1;
 	
 	// Send 4 packets each to all neighbor nodes
@@ -264,12 +262,13 @@ CarpHeader::SetLinkQuality(Ptr<Neighbor> nei)
 	{
 		for (uint8_t i = 0; i< 4; i++)
 		{
+			AquaSimAddress ash;
+			Ptr<Packet> p = Create<Packet>();
 			ash.SetNumForwards(numForwards);
 			ash.SetDAddr(*it);
 			ash.SetNextHop(*it);
 			p->AddHeader(ash);
-			Simulator::Schedule(jitter, &AquaSimRouting::SendDown, this, p, ash.GetNextHop(), jitter);
-			
+			Simulator::Schedule(jitter, &AquaSimRouting::SendDown, this, p, ash.GetNextHop(), jitter);	
 			// Find a way for a random delay
 			// Simulator::Schedule(jitter);
 		}
@@ -279,10 +278,10 @@ CarpHeader::SetLinkQuality(Ptr<Neighbor> nei)
 	for (vector<AquaSimAddress>::iterator it = nei->m_neighborAddress.begin(); it!= nei->m_neighborAddress.end();
 	it++)
 	{
+		AquaSimAddress neighbor = (*it);  // Checks each neighbor to determine the number of packets received
 		uint8_t counts = 0;
 		if(p)
 		{
-			AquaSimAddress nei = (*it);
 			// Check the packets received by this neighbor
 			counts++;
 		}
