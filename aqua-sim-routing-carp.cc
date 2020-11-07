@@ -46,15 +46,15 @@ AquaSimCarp::SendHello()
 {
 	Ptr<Packet> p = CreatePacket();
 	AquaSimHeader ash;
-	//CarpHeader crh;
+	Ipv4Header iph;
 	HelloHeader hh; // This is an object of the HelloHeader
-	//p->RemoveHeader(ash);
-	//p->RemoveHeader(crh);
-	hh.SetHopCount(hopCount);
+	
+	hh.SetHopCount(hopCount);  // Assumes the initial hop count of the sink is 0
 	hh.SetSAddr(sAddr);
 	
 	p->AddHeader(hh);
 	ash.SetNextHop(AquaSimRouting::GetBroadcast()); // This is used to broadcast the packet to all neighbors
+	p->Addheader(iph);
 	p->AddHeader(ash);
 	Simulator::Schedule(Seconds(0.0),&AquaSimRouting::SendDown,this,p,ash.GetNextHop(),0.0);	
 }
@@ -66,8 +66,10 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 	if(p)
 	{
 		AquaSimHeader ash;
+		Ipv4Header iph;
 		HelloHeader hh;
 		p->RemoveHeader(ash);
+		p->RemoveHeader(iph); // This is used to access the Ipv4 object so as to obtain the local interface
 		p->RemoveHeader(hh);
 		AquaSimAddress temp = hh.GetSAddr(); // Neighbor of the receiving node
 		
@@ -128,27 +130,7 @@ AquaSimCarp::ForwardData(Ptr<Packet> p)
 	p->RemoveHeader(ash);
 	Simulator::Schedule(Seconds(0.0),&AquaSimRouting::SendDown,this,p,ash.GetNextHop(),0.0);
 }
-///* The energy levels of the nodes are set using this module */
-//void
-//AquaSimCarp::SetEnergy()
-//{
-	//m_energy = 40.0; 	// This is an assumed value of the power rating ( W or kW)
-//}
 
-///* This is used to set the maximum value of the receiver's buffer for congestion control */
-//void
-//AquaSimCarp::SetQueue()
-//{
-	//m_queue = 4; 	// Every node can accommodate 4 packets in its buffer
-//}
-
-//void
-//AquaSimCarp::SetLinkQuality
-//{
-	//// The logic behind the link quality is set here
-//}
-
-/* This is used to send PONG packets by neighbors to its sender */
 void
 AquaSimCarp::SendPong(Ptr<Packet> p)
 {
@@ -164,9 +146,12 @@ AquaSimCarp::SendPong(Ptr<Packet> p)
   AquaSimAddress dest_addr = ph.GetSAddr();
 
 	// Used to set attributes of the PONG packet
+	p->AddHeader(ash);
+	poh.SetHopCount(p); // Used to determine the hop count of the node from the sink
+	p->RemoveHeader(ash);
 	poh.SetSAddr(RaAddr());  // Set the source of the packet
 	poh.SetLinkQuality(Ptr<Neighbor> neig) // Computes the values of lq to all nodes using the position vector (Args: NetDevice, Nodes, Neighbors)
-	poh.SetHopCount(); // Used to determine the hop count of the node from the sink
+	
 	poh.SetQueue(m_queue); // Indicates the available buffer space at the sender (This could be symmetric across all nodes)
 	poh.SetEnergy(m_energy);
 	poh.SetDAddr(dest_addr);

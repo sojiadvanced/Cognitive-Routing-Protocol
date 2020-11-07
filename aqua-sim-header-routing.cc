@@ -270,7 +270,7 @@ CarpHeader::SetLinkQuality(Ptr<Neighbor> nei)
 			p->AddHeader(ash);
 			Simulator::Schedule(jitter, &AquaSimRouting::SendDown, this, p, ash.GetNextHop(), jitter);	
 			// Find a way for a random delay
-			// Simulator::Schedule(jitter);
+			Simulator::Schedule(jitter);
 		}
 	}
 	// Check number of packets received each by the nodes
@@ -292,12 +292,7 @@ CarpHeader::SetLinkQuality(Ptr<Neighbor> nei)
 	// Obtain the maximum psr
 	sort(max_lq.begin(), max_lq.end(), greater<double_t>());
 	m_linkQuality = alpha * max_lq.front();
-	/* 
-	 * Invoke the Simulator::Schedule(0.0, &AquaSim::Send, this, p, dest);
-	 * Run a loop to send 4 packets each to the neighbor
-	 * Check each neighbor and extract the no of packets received
-	 * compute received /sent for each neighbor,
-	 *  */
+	
 	 
 }
 double

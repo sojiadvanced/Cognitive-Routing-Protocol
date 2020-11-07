@@ -45,7 +45,6 @@ public:
   // Processing of Pong Packet
   void SendPong (Ptr<Packet> packet);
   void RecvPong (Ptr<Packet> packet); // Neighbors for each node are determined here
-  //double Calculatelq (double lq);	// Calculate the link quality
   
   // Sending Data Packet
   Ptr<UniformRandomVariable> m_rand;
