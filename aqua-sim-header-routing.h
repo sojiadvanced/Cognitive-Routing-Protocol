@@ -89,14 +89,22 @@ class CarpHeader : public Header
 	virtual uint32_t GetSerializedSize(void) const;
 	virtual void Print (std::ostream &os) const;
 	
+	// Enum
+	enum PacketType
+	{
+		ACK,
+		DATA
+	}m_pckType;
+	
 	// Setters
 	void SetSAddr(AquaSimAddress senderAddr);
 	void SetDAddr(AquaSimAddress destAddr);
 	void SetPktCount(uint8_t num_pkt);
 	void SetHopCount(Ptr<Packet> p); // Set a default value of Zero (0) for the sink
-	void SetLinkQuality(Ptr<Neighbor> nei);
+	void SetLinkQuality(AquaSimAddress src, vector<AquaSimAddress> neigh);
 	void SetQueue(uint8_t queue);
 	void SetEnergy(double energy);
+	void SetPacketType(PacketType pType);
 	
 	// Getters
 	AquaSimAddress GetSAddr();
@@ -106,6 +114,8 @@ class CarpHeader : public Header
 	uint8_t GetQueue();
 	double GetEnergy();
 	double GetLinkQuality();
+	PacketType GetPacketType();
+
 	
 protected:
 	AquaSimAddress m_sAddr;
@@ -114,7 +124,7 @@ protected:
 	AquaSimAddress m_dAddr;
 	double m_energy;
 	double m_linkQuality;
-	uint32_t m_queue;
+	uint8_t m_queue;
 	
 }; // class CarpHeader
 

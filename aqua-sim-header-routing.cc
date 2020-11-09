@@ -247,7 +247,17 @@ CarpHeader::SetEnergy(double energy)
   m_energy = energy;
 }
 void
-CarpHeader::SetLinkQuality(Ptr<Neighbor> nei)
+CarpHeader::SetPacketType(PacketType pType)
+{
+	m_pckType = pType;
+}
+PacketType
+CarpHeader::GetPacketType()
+{
+	return m_pckType;
+}
+void
+CarpHeader::SetLinkQuality(AquaSimAddress src, vector<AquaSimAddress> nei)
 {
 	// Obtain the neighor of the nodes
 	// Send 4 packets each to all nodes
@@ -257,7 +267,7 @@ CarpHeader::SetLinkQuality(Ptr<Neighbor> nei)
 	uint8_t numForwards = 1;
 	
 	// Send 4 packets each to all neighbor nodes
-	for (vector<AquaSimAddress>::iterator it = nei->m_neighborAddress.begin(); it!= nei->m_neighborAddress.end();
+	for (vector<AquaSimAddress>::iterator it = nei.begin(); it!= nei.end();
 	it++)
 	{
 		for (uint8_t i = 0; i< 4; i++)
@@ -273,6 +283,15 @@ CarpHeader::SetLinkQuality(Ptr<Neighbor> nei)
 			Simulator::Schedule(jitter);
 		}
 	}
+	::RecvTrain(Ptr<Packet> p)
+	{
+		if(p.GetPacketType == 'ACK')
+		{
+			SendAck(MakeACK(p));
+		}
+	}
+	
+	
 	// Check number of packets received each by the nodes
 	// The need to call the mac /phy layer to achieve this might be required
 	for (vector<AquaSimAddress>::iterator it = nei->m_neighborAddress.begin(); it!= nei->m_neighborAddress.end();
@@ -291,9 +310,7 @@ CarpHeader::SetLinkQuality(Ptr<Neighbor> nei)
 	}
 	// Obtain the maximum psr
 	sort(max_lq.begin(), max_lq.end(), greater<double_t>());
-	m_linkQuality = alpha * max_lq.front();
-	
-	 
+	m_linkQuality = alpha * max_lq.front(); 
 }
 double
 CarpHeader::GetLinkQuality()

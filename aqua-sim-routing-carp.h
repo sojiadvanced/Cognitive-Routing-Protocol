@@ -28,7 +28,7 @@ struct Neighbor
 class AquaSimCarp : public AquaSimRouting {
 public:
   AquaSimCarp();
-  std::map<Ptr<NetDevice>, Neighbor>m_nodeNeighbor; // This is used to retrieve the neighbors of a node via the netdevice
+  std::map<Ptr<AquaSimNetDevice>, Neighbor>m_nodeNeighbor; // This is used to retrieve the neighbors of a node via the netdevice
   Neighbor* m_neigh; // This is a pointer to the struct holding the neighbors of each node
   static TypeId GetTypeId(void);
   virtual bool Recv(Ptr<Packet> packet);
@@ -46,6 +46,10 @@ public:
   void SendPong (Ptr<Packet> packet);
   void RecvPong (Ptr<Packet> packet); // Neighbors for each node are determined here
   
+  // Auxiliary methods
+  Ptr<Packet> MakeACK(AquaSimAddress src);
+  void SendACK(Ptr<Packet> p);
+  
   // Sending Data Packet
   Ptr<UniformRandomVariable> m_rand;
 
@@ -53,16 +57,18 @@ public:
 
 private:
   Ptr<Ipv4>m_ipv4;
-  uint32_t m_if; // Used to retrieve the interface from the address
+ // uint32_t m_if; // Used to retrieve the interface from the address
   Time wait_time;
   AquaSimAddress sAddr;
-  uint32_t m_hopCount;
-  uint32_t m_num_pkt =4; // An assumption is made for the number of packets
+  uint8_t m_hopCount;
+  uint8_t m_num_pkt =4; // An assumption is made for the number of packets
   AquaSimAddress dAddr;
   double m_energy;
   double m_linkQuality;
-  uint32_t m_queue;
+  uint8_t m_queue;
   double lq; 
   double alpha = 0.85;
+  AquaSimNetDevice m_device;
+  uint8_t m_nodeId =0;
 };  // class AquaSimCarp 
 } // End of ns3
