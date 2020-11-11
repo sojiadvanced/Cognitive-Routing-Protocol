@@ -210,9 +210,9 @@ CarpHeader::GetPktCount()
   return m_numPkt; // Try to initialize this variable in the header.h file --> m_numPkt(4)
 }
 void
-CarpHeader::SetSAddr(AquaSimAddress senderAddr)
+CarpHeader::SetSAddr()
 {
-  m_sAddr = senderAddr;
+  m_sAddr = RaAddr();
 }
 void
 CarpHeader::SetDAddr(AquaSimAddress destAddr)
@@ -256,67 +256,11 @@ CarpHeader::GetPacketType()
 {
 	return m_pckType;
 }
-void
-CarpHeader::SetLinkQuality(AquaSimAddress src, vector<AquaSimAddress> nei)
-{
-	// Obtain the neighor of the nodes
-	// Send 4 packets each to all nodes
-	// Wait for acknowledgment count
-	vector<double_t>max_lq;
-	Time jitter = Seconds(m_rand->GetValue()*0.5);
-	uint8_t numForwards = 1;
-	
-	// Send 4 packets each to all neighbor nodes
-	for (vector<AquaSimAddress>::iterator it = nei.begin(); it!= nei.end();
-	it++)
-	{
-		for (uint8_t i = 0; i< 4; i++)
-		{
-			AquaSimAddress ash;
-			Ptr<Packet> p = Create<Packet>();
-			ash.SetNumForwards(numForwards);
-			ash.SetDAddr(*it);
-			ash.SetNextHop(*it);
-			p->AddHeader(ash);
-			Simulator::Schedule(jitter, &AquaSimRouting::SendDown, this, p, ash.GetNextHop(), jitter);	
-			// Find a way for a random delay
-			Simulator::Schedule(jitter);
-		}
-	}
-	::RecvTrain(Ptr<Packet> p)
-	{
-		if(p.GetPacketType == 'ACK')
-		{
-			SendAck(MakeACK(p));
-		}
-	}
-	
-	
-	// Check number of packets received each by the nodes
-	// The need to call the mac /phy layer to achieve this might be required
-	for (vector<AquaSimAddress>::iterator it = nei->m_neighborAddress.begin(); it!= nei->m_neighborAddress.end();
-	it++)
-	{
-		AquaSimAddress neighbor = (*it);  // Checks each neighbor to determine the number of packets received
-		uint8_t counts = 0;
-		if(p)
-		{
-			// Check the packets received by this neighbor
-			counts++;
-		}
-		// obtain the packet success ratio for each neighbor
-		double_t psr = counts/4;
-		max_lq.push_back(psr);
-	}
-	// Obtain the maximum psr
-	sort(max_lq.begin(), max_lq.end(), greater<double_t>());
-	m_linkQuality = alpha * max_lq.front(); 
-}
-double
-CarpHeader::GetLinkQuality()
-{
-	return m_linkQuality;
-}
+//double
+//CarpHeader::GetLinkQuality()
+//{
+	//return m_linkQuality;
+//}
 
 /* Hello Header Class Definition */
 HelloHeader::HelloHeader()

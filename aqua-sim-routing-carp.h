@@ -33,6 +33,7 @@ public:
   static TypeId GetTypeId(void);
   virtual bool Recv(Ptr<Packet> packet);
   inline AquaSimAddress RaAddr() { return AquaSimAddress::ConvertFrom(GetNetDevice()->GetAddress()); }
+  std::map<AquaSimAddress, int>pCount;
   
   // Processing of Ping Packet
   void SendPing (uint32_t m_num_pkt, vector<Neighbor> neigh);
@@ -49,10 +50,14 @@ public:
   // Auxiliary methods
   Ptr<Packet> MakeACK(AquaSimAddress src);
   void SendACK(Ptr<Packet> p);
+  AquaSimAddress GetNextHop();
+  void SetLinkQuality(AquaSimAddress src, vector<AquaSimAddress> nei);
+  void RecvTrain(Ptr<Packet> p);
+  void RecvAck(Ptr<Packet> p);
   
   // Sending Data Packet
   Ptr<UniformRandomVariable> m_rand;
-
+  ForwardData(p);  // This is used to send packets to the mac layer for onward delivery to the destination or next hop
   virtual void DoDispose();
 
 private:
@@ -68,6 +73,7 @@ private:
   uint8_t m_queue;
   double lq; 
   double alpha = 0.85;
+  AquaSimAddress m_nextHop;
   AquaSimNetDevice m_device;
   uint8_t m_nodeId =0;
 };  // class AquaSimCarp 

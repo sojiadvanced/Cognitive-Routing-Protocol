@@ -46,7 +46,6 @@ AquaSimCarp::SendHello()
 {
 	Ptr<Packet> p = CreatePacket();
 	AquaSimHeader ash;
-	Ipv4Header iph;
 	HelloHeader hh; // This is an object of the HelloHeader
 	
 	hh.SetHopCount(hopCount);  // Assumes the initial hop count of the sink is 0
@@ -58,7 +57,6 @@ AquaSimCarp::SendHello()
 	
 	p->AddHeader(hh);
 	ash.SetNextHop(AquaSimRouting::GetBroadcast()); // This is used to broadcast the packet to all neighbors
-	p->Addheader(iph);
 	p->AddHeader(ash);
 	Simulator::Schedule(Seconds(0.0),&AquaSimRouting::SendDown,this,p,ash.GetNextHop(),0.0);	
 }
@@ -70,10 +68,8 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 	if(p)
 	{
 		AquaSimHeader ash;
-		Ipv4Header iph;
 		HelloHeader hh;
 		p->RemoveHeader(ash);
-		p->RemoveHeader(iph); // This is used to access the Ipv4 object so as to obtain the local interface
 		p->RemoveHeader(hh);
 		AquaSimAddress temp = hh.GetSAddr(); // Neighbor of the receiving node
 		
@@ -181,6 +177,7 @@ AquaSimCarp::MakeACK(AquaSimAddress DataSender)
 	AquaSimHeader ash;
 	CarpHeader crh;
 	crh.SetPacketType(ACK);
+	crh.SetSAddr();
 	ash.SetSAddr(AquaSimAddress::ConvertFrom(m_device->GetAddress()); // This converts the interface address to AquaSimAddress
 	ash.SetNextHop(DataSender);
 	ash.SetDAddr(DataSender);
@@ -200,8 +197,95 @@ AquaSimCarp::SendACK(Ptr<Packet> p)
 	AquaSimAddress DataSender = crh.GetSAddr();
 	p->AddHeader(ash);
 	SendPacket(MakeACK(DataSender)); // Check this method and reference the ALOHA sent by Dmitrii
-	// m_boCounter = 0;
-	// p =0;
+	p =0;
+}
+/* Method to select the next hop while awaiting the PONG response */
+void
+AquaSimCarp::SetLinkQuality(AquaSimAddress src, vector<AquaSimAddress> nei)
+{
+
+	vector<double_t>max_lq;
+	Time jitter = Seconds(m_rand->GetValue()*0.5);
+	uint8_t numForwards = 1;
+	
+	// Send 4 packets each to all neighbor nodes
+	for (vector<AquaSimAddress>::iterator it = nei.begin(); it!= nei.end();
+	it++)
+	{
+		pCount.insert(std::pair<AquaSimAddress, int>(*it,0)); // This map automatically keeps track of the ACKS from the neighbors for PSR estimation
+		for (uint8_t i = 0; i< 4; i++)
+		{
+			AquaSimAddress ash;
+			PacketType var = LQ_DATA;
+			CarpHeader crh;
+			crh.SetPacketType(var);
+			Ptr<Packet> p = Create<Packet>();
+			ash.SetNumForwards(numForwards);
+			ash.SetSAddr(src);
+			ash.SetDAddr(*it);
+			ash.SetNextHop(*it);
+			p->AddHeader(crh);
+			p->AddHeader(ash);
+			Simulator::Schedule(jitter, &AquaSimRouting::SendDown, this, p, ash.GetNextHop(), jitter);	
+			// Find a way for a random delay
+			Simulator::Schedule(jitter);
+		}
+	}
+	/* Neighbors receiving a train of packets from sender in order to process an ACK */
+	void
+	AquaSimCarp::RecvTrain(Ptr<Packet> p)
+	{
+		AquaSimAddress ash;
+		CarpHeader crh;
+		p->RemoveHeader(ash);
+		p->PeekHeader(crh)
+		if(p.GetPacketType == LQ_DATA)
+		{
+			p->AddHeader(ash);
+			SendAck(p);
+		}
+		p =0;
+	}
+	/* For everytime an Ack is received by a neighbor, the counter is increased */
+	void
+	AquaSimCarp::RecvAck(Ptr<Packet> p)
+	{
+		AquaSimAddress ash;
+		CarpHeader crh;
+		p->RemoveHeader(ash);
+		p->PeekHeader(crh);
+		AquaSimAddress neighbor = ash.GetSAddr();
+		if(crh.GetPacketType == ACK)
+		{
+			for (std::map<AquaSimAddress, int>::iterator it = pCount.begin(); it!= pCount.end(); it++)
+			{
+				if(it->first == neighbor)
+				{
+					it->second = it->second + 1;
+				}
+			}
+		}
+	}
+	int testVal = 0;
+	for (std::map<AquaSimAddress, int>::iterator it = pCount.begin(); it!= pCount.end(); it++)
+	{
+		if(it->second > testVal)
+		{
+			testVal = it->second;
+		}
+	}
+	std::map<AquaSimAddress, int>::iterator valnextHop = pCount.find(testVal);
+	double_t psr = testVal /4;
+	m_linkQuality = psr *alpha;
+	m_nextHop = valnextHop->first;  // This is the selected relay node with maximum lq at time <t>
+	
+	NS_LOG_INFO("The selected relay node has link quality of: " << m_linkQuality);
+}
+/* This method is to obtain the relay node */
+AquaSimAddress
+AquaSimCarp::GetNextHop()
+{
+	return m_nextHop;
 }
 /* A node receives a PONG packet, selects the neighbor with max lq and forwards the data packet */
 void
@@ -225,18 +309,8 @@ AquaSimCarp::RecvPong(Ptr<Packet> p)
 	srcNeighbor = m_nodeNeighbor[dev];
 	while (wait_time != 0.0)
 	{
-		// This is from each neighbor of x to the best reachable neighbor towards the sink
-	  	//double neighbor_lq = poh.GetLinkQuality();
-	  	//if (lq_check < neighbor_lq)
-	  	//{
-			//lq_check = neighbor_lq;
-			//AquaSimAddress relay_node = ash.GetSAddr();
-			//ash.GetNextHop(relay_node);
-			//p->AddHeader(ash);
-		//}
-		// To compute lq_x,y (This is the link quality estimate from x to y)
-		crh.SetLinkQuality(srcAddr, srcNeighbor.m_neighborAddress);
-		AquaSimAddress nextHop = crh.GetLinkQuality(); // This should return the relay node address
+		SetLinkQuality(srcAddr, srcNeighbor.m_neighborAddress);
+		AquaSimAddress nextHop = GetNextHop(); // This should return the relay node address
 		ash.SetNextHop(nextHop);
 		p->AddHeader(crh);
 		p->AddHeader(ash);
@@ -244,7 +318,10 @@ AquaSimCarp::RecvPong(Ptr<Packet> p)
 	}
 	ForwardData(p); // This module would be worked upon	
 }
-
+void
+AquaSimCarp::ForwardData(Ptr<Packet> p)
+{
+}
 // This is used for receiving actual data packets
 bool
 AquaSimCarp::Recv(Ptr<Packet> p)

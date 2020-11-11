@@ -93,11 +93,13 @@ class CarpHeader : public Header
 	enum PacketType
 	{
 		ACK,
-		DATA
+		DATA,
+		LQ_DATA
 	}m_pckType;
 	
 	// Setters
-	void SetSAddr(AquaSimAddress senderAddr);
+	inline AquaSimAddress RaAddr() {return AquaSimAddress::ConvertFrom(GetNetDevice()->GetAddress()); }
+	void SetSAddr();
 	void SetDAddr(AquaSimAddress destAddr);
 	void SetPktCount(uint8_t num_pkt);
 	void SetHopCount(Ptr<Packet> p); // Set a default value of Zero (0) for the sink
