@@ -222,14 +222,11 @@ CarpHeader::SetDAddr(AquaSimAddress destAddr)
 // This method checks the packet to determine the hop count by the number of forwards
 // It adds 1 to the number of forwards before re-encapsulation
 void
-CarpHeader::SetHopCount(Ptr<Packet> p)
+CarpHeader::SetHopCount(uint8_t hopCount)
 {
-  AquaSimHeader ash;
-  p->RemoveHeader(ash);
   
-  m_hopCount = ash.GetNumForwards();
-  ash.SetNumForwards(ash.GetNumForwars() + 1);
-  p->AddHeader(ash);
+  m_hopCount = hopCount;
+  
 }
 void
 CarpHeader::GetHopCount()
