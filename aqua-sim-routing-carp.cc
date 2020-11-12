@@ -320,6 +320,7 @@ AquaSimCarp::RecvPong(Ptr<Packet> p)
 	
 	SetNextHop(srcAddr, srcNeighbor.m_neighborAddress);
 	AquaSimAddress nextHop = GetNextHop(); // This should return the relay node address
+	ash.SetPacketType(DATA);
 	ash.SetNextHop(nextHop);
 	p->AddHeader(crh);
 	p->AddHeader(ash);
@@ -332,33 +333,41 @@ bool
 AquaSimCarp::Recv(Ptr<Packet> p)
 {
   AquaSimHeader ash;
-  // Ipv4Header iph; // Not sure if the Ipv4Header is needed
   CarpHeader crh;
 
-	p->RemoveHeader(ash);
+  p->RemoveHeader(ash);
+  p->PeekHeader(crh);
+  dst = ash.GetDAddr();
 	// This checks if the source address equals the nodeID
 	if (ash.GetSAddr() == RaAddr()) {
 		// If there exists a loop, must drop the packet, eliminating loop of infinity
 		if (ash.GetNumForwards() > 0) {
-      NS_LOG_INFO("Recv: there exists a loop, dropping packet =" << p);
-      p=0;
+			NS_LOG_INFO("Recv: there exists a loop, dropping packet =" << p);
+			p=0;
 			return false;
 		}
 		// else if this is a packet I am originating, must add IP header
 		else if (ash.GetNumForwards() == 0) // The node is the source of this packet
-			ash.SetSize(ash.GetSize() + IP_HDR_LEN);
+			ash.SetSize(ash.GetSize());
 	}
 	else if( ash.GetNextHop() != AquaSimAddress::GetBroadcast() && ash.GetNextHop() != RaAddr() )
-  {
-    NS_LOG_INFO("Recv: duplicate, dropping packet=" << p);
-    p=0;
+   {
+		NS_LOG_INFO("Recv: duplicate, dropping packet=" << p);
+		p=0;
 		return false;
 	}
-  uint8_t numForward = ash.GetNumForwards() + 1;
+	else if (dst == GetNetDevice()->GetAddress())
+	{
+		NS_LOG_INFO("AquaSimCarp::Recv address: " << 
+					GetNetDevice()->GetAddress() << " packet is delivered ");
+		p->AddHeader(ash);
+		SendUp(p); // Sends the packet up the application layer
+		return true;
+	}
+  uint16_t numForward = ash.GetNumForwards() + 1;
   ash.SetNumForwards(numForward);
   p->AddHeader(ash);
-  
+  ForwardData(p);
   return true;
 }
 
-//m_pktTimer.Schedule(Seconds(0.0000001+10*m_rand->GetValue()));
