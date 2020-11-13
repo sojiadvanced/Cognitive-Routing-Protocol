@@ -204,7 +204,7 @@ CarpHeader::GetDAddr()
 {
   return m_dAddr;
 }
-uint32_t
+uint8_t
 CarpHeader::GetPktCount()
 {
   return m_numPkt; // Try to initialize this variable in the header.h file --> m_numPkt(4)
@@ -222,7 +222,7 @@ CarpHeader::SetDAddr(AquaSimAddress destAddr)
 // This method checks the packet to determine the hop count by the number of forwards
 // It adds 1 to the number of forwards before re-encapsulation
 void
-CarpHeader::SetHopCount(uint8_t hopCount)
+CarpHeader::SetHopCount(uint16_t hopCount)
 {
   
   m_hopCount = hopCount;
@@ -253,11 +253,7 @@ CarpHeader::GetPacketType()
 {
 	return m_pckType;
 }
-//double
-//CarpHeader::GetLinkQuality()
-//{
-	//return m_linkQuality;
-//}
+
 
 /* Hello Header Class Definition */
 HelloHeader::HelloHeader()
@@ -355,7 +351,7 @@ PongHeader::Serialize(Buffer::Iterator start)
   i.WriteU8(m_queue);
   i.WriteU8(m_energy); // Review how to serialize a data type of double
   i.WriteU8(m_hopCount);
-  i.WriteU8(m_linkQuality); // Review how to serialize a data type of double
+ 
 }
 uint32_t
 PongHeader::Deserialize(Buffer::Iterator start)
@@ -366,7 +362,7 @@ PongHeader::Deserialize(Buffer::Iterator start)
   m_queue = i.ReadU8();
   m_energy= i.ReadU8(); // Review how to deserialize a data type of double
   m_hopCount = i.ReadU8();
-  m_linkQuality = i.ReadU8(); // Review how to deserialize a data type of double
+ 
   return GetSerializedSize();
 }
 TypeId

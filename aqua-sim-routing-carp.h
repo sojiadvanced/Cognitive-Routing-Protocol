@@ -59,8 +59,6 @@ public:
   virtual void DoDispose();
 
 private:
-  Ptr<Ipv4>m_ipv4;
- // uint32_t m_if; // Used to retrieve the interface from the address
   Time wait_time;
   AquaSimAddress sAddr;
   uint8_t m_hopCount;

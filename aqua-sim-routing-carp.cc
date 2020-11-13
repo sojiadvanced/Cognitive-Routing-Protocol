@@ -11,7 +11,7 @@
 #include "ns3/mobility-model.h"
 #include "ns3/simulator.h"
 
-#define IP_HDR_LEN 20
+// #define IP_HDR_LEN 20
 using namespace ns3;
 
 /**** AquaSimCarp ****/
@@ -19,7 +19,7 @@ using namespace ns3;
 NS_OBJECT_ENSURE_REGISTERED(AquaSimCarp);
 
 /* Carp protocol definition with wait_time constructor value */
-AquaSimCarp::AquaSimCarp() : wait_time(this, 100) // Check why the need of m_pktTimer
+AquaSimCarp::AquaSimCarp() : wait_time(this, 100)
 {
   NS_LOG_FUNCTION(this);
   m_rand = CreateObject<UniformRandomVariable> ();
@@ -320,7 +320,7 @@ AquaSimCarp::RecvPong(Ptr<Packet> p)
 	
 	SetNextHop(srcAddr, srcNeighbor.m_neighborAddress);
 	AquaSimAddress nextHop = GetNextHop(); // This should return the relay node address
-	ash.SetPacketType(DATA);
+	crh.SetPacketType(DATA);
 	ash.SetNextHop(nextHop);
 	p->AddHeader(crh);
 	p->AddHeader(ash);
@@ -347,8 +347,8 @@ AquaSimCarp::Recv(Ptr<Packet> p)
 			return false;
 		}
 		// else if this is a packet I am originating, must add IP header
-		else if (ash.GetNumForwards() == 0) // The node is the source of this packet
-			ash.SetSize(ash.GetSize());
+		// else if (ash.GetNumForwards() == 0) // The node is the source of this packet
+		//	ash.SetSize(ash.GetSize());
 	}
 	else if( ash.GetNextHop() != AquaSimAddress::GetBroadcast() && ash.GetNextHop() != RaAddr() )
    {
@@ -356,7 +356,7 @@ AquaSimCarp::Recv(Ptr<Packet> p)
 		p=0;
 		return false;
 	}
-	else if (dst == GetNetDevice()->GetAddress())
+	else if (dst == GetNetDevice()->GetAddress() && crh.GetPacketType == DATA)
 	{
 		NS_LOG_INFO("AquaSimCarp::Recv address: " << 
 					GetNetDevice()->GetAddress() << " packet is delivered ");

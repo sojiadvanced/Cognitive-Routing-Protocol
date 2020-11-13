@@ -112,19 +112,19 @@ class CarpHeader : public Header
 	AquaSimAddress GetSAddr();
 	AquaSimAddress GetDAddr();
 	uint8_t GetPktCount();
-	uint8_t GetHopCount();
+	uint16_t GetHopCount();
 	uint8_t GetQueue();
 	double GetEnergy();
-	double GetLinkQuality();
+	// double GetLinkQuality();
 	PacketType GetPacketType();
 	
 protected:
 	AquaSimAddress m_sAddr;
-	uint8_t m_hopCount;
+	uint16_t m_hopCount;
 	uint8_t m_numPkt =4; // An assumption is made for the number of packets
 	AquaSimAddress m_dAddr;
 	double m_energy;
-	double m_linkQuality;
+	// double m_linkQuality;
 	uint8_t m_queue;
 	
 }; // class CarpHeader
