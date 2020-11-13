@@ -81,7 +81,7 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 		ash.SetNextHop(AquaSimRouting::GetBroadcast());
 		p->AddHeader(ash);
 		Simulator::Schedule(Seconds(0.0),&AquaSimRouting::SendDown,this,p,ash.GetNextHop(),0.0);
-		// SendHello(); Confirm if the need of this method 
+		// SendHello(); Confirm if this method is needed
 	}
 }
 
