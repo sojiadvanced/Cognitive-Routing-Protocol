@@ -103,7 +103,6 @@ class CarpHeader : public Header
 	void SetDAddr(AquaSimAddress destAddr);
 	void SetPktCount(uint8_t num_pkt);
 	void SetHopCount(uint8_t hopCount); // Set a default value of Zero (0) for the sink
-	void SetLinkQuality(AquaSimAddress src, vector<AquaSimAddress> neigh);
 	void SetQueue(uint8_t queue);
 	void SetEnergy(double energy);
 	void SetPacketType(PacketType pType);
@@ -115,7 +114,6 @@ class CarpHeader : public Header
 	uint16_t GetHopCount();
 	uint8_t GetQueue();
 	double GetEnergy();
-	// double GetLinkQuality();
 	PacketType GetPacketType();
 	
 protected:
@@ -124,7 +122,6 @@ protected:
 	uint8_t m_numPkt =4; // An assumption is made for the number of packets
 	AquaSimAddress m_dAddr;
 	double m_energy;
-	// double m_linkQuality;
 	uint8_t m_queue;
 	
 }; // class CarpHeader

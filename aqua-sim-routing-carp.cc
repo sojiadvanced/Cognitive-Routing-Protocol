@@ -19,7 +19,7 @@ using namespace ns3;
 NS_OBJECT_ENSURE_REGISTERED(AquaSimCarp);
 
 /* Carp protocol definition with wait_time constructor value */
-AquaSimCarp::AquaSimCarp() : wait_time(this, 100)
+AquaSimCarp::AquaSimCarp() : wait_time(this, MilliSeconds (6.0))
 {
   NS_LOG_FUNCTION(this);
   m_rand = CreateObject<UniformRandomVariable> ();
@@ -32,10 +32,18 @@ AquaSimCarp::GetTypeId(void)
   static TypeId tid = TypeId("ns3::AquaSimCarp")
       .SetParent<AquaSimRouting>()
       .AddConstructor<AquaSimCarp>()
+      /* Assumptions
+       * Speed of sound = 1500m/s
+       * Max distance between nodes = 5m
+       *  */
       .AddAttribute ("WaitTime", "Time duration to retrieve all the PONG packets. ",
-                   TimeValue (Seconds (100)),
+                   TimeValue (MilliSeconds (6.6)),
                    MakeTimeAccessor (&AquaSimCarp::wait_time),
-                   MakeTimeChecker ());
+                   MakeTimeChecker ())
+      .AddAttribute("HelloTime", "Time duration for the HELLO broadcast. ",
+					TimeValue (Seconds (1.0)),
+					MakeTimeAccessor (&AquaSimCarp::hello_time),
+					MakeTimeChecker ());
   return tid;
 }
 
@@ -49,7 +57,8 @@ AquaSimCarp::SendHello()
 	HelloHeader hh;
 	uint16_t hopcount = ash.GetNumForwards(); // This might need to be stored and mapped with the neighbors data
 	hh.SetHopCount(hopCount);  // Assumes the initial hop count of the sink is 0
-	sAddr = AquaSimAddress::ConvertFrom(m_device->GetAddress());
+	// sAddr = AquaSimAddress::ConvertFrom(GetNetDevice()->GetAddress());
+	sAddr = RaAddr();
 	hh.SetSAddr(sAddr);
 	
 	p->AddHeader(hh);
@@ -73,10 +82,14 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 		
 		hh.SetHopCount(numForwards);
 		AquaSimAddress temp = hh.GetSAddr(); // Neighbor of the receiving node
-		// How to parse the m_nodeId?
-		Ptr<AquaSimNetDevice> dev = m_device->GetChannel()->GetDevice(m_nodeId);
-
-        m_nodeNeighbor[dev] = m_neigh->m_neighborAddress.push_back(temp); // This maps the sender address and updates the vector holding the neighbor address of the interface
+		
+		/* Two key things are required
+		 * 1. The need to obtain the AquaSimNetDevice of the current node with the packet
+		 * 2. The node id of the current node
+		 *  */
+		// Ptr<AquaSimNetDevice> pktNode = m_device->GetChannel()->GetDevice(m_nodeId);
+		Address pktNodeAddr = GetNetDevice()->GetAddress();
+        m_nodeNeighbor[pktNodeAddr] = m_neigh->m_neighborAddress.push_back(temp); // This maps the sender address and updates the vector holding the neighbor address of the interface
 		ash.SetNumForwards(numForwards + 1);
 		ash.SetNextHop(AquaSimRouting::GetBroadcast());
 		p->AddHeader(ash);
@@ -99,14 +112,18 @@ AquaSimCarp::SendPing ()
   ash.SetDirection(AquaSimHeader::DOWN);
   p->AddHeader(ph);  
   
-  // How to obtain the node_Id?
-  Ptr<AquaSimNetDevice> dev = m_device->GetChannel()->GetDevice(m_nodeId); // Obtain the AquaSimNetDevice of the node
+  /* How to obtain the node_Id?
+   * The key of the map should be the node Address and not a pointer
+   * key,value = Address, Neighbor
+   *  */
+  // Ptr<AquaSimNetDevice> pktNode = m_device->GetChannel()->GetDevice(m_nodeId); // Obtain the AquaSimNetDevice of the node
+  Address pktNodeAddr = GetNetDevice()->GetAddress();
   
   // Extract the neighbors of the identified AquaSimNetDevice & iterate through all the neighbors of a node to send the PING packet
-  for (map<Ptr<AquaSimNetDevice>, Neighbor>::iterator iter = m_nodeNeighbor.begin();
+  for (map<Address, Neighbor>::iterator iter = m_nodeNeighbor.begin();
   iter!= m_nodeNeighbor.end(); iter++)
   {
-	if (iter->first == dev)
+	if (iter->first == pktNodeAddr)
 	{
 		for (vector<AquaSimAddress>::iterator it = iter->second.begin(); it!= iter->second.end(); it++)
 		{  
@@ -313,10 +330,11 @@ AquaSimCarp::RecvPong(Ptr<Packet> p)
 	CarpHeader crh;
 	
 	// Obtain the source address of the node via the AquaSimNetDevice interface
-	Ptr<AquaSimNetDevice> dev = m_device->GetChannel()->GetDevice(m_nodeId);
+	// Ptr<AquaSimNetDevice> dev = m_device->GetChannel()->GetDevice(m_nodeId);
+	pktNodeAddr = GetNetDevice()->GetAddress();
 	AquaSimAddress srcAddr = RaAddr();
 	Neighbor srcNeighbor;
-	srcNeighbor = m_nodeNeighbor[dev]; // Confirm if this process extract the struct Neighbor from the map
+	srcNeighbor = m_nodeNeighbor[pktNodeAddr]; // Confirm if this process extract the struct Neighbor from the map
 	
 	SetNextHop(srcAddr, srcNeighbor.m_neighborAddress);
 	AquaSimAddress nextHop = GetNextHop(); // This should return the relay node address

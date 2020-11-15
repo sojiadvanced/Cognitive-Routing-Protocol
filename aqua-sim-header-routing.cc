@@ -168,7 +168,7 @@ CarpHeader::Deserialize(Buffer::Iterator start)
 uint32_t
 CarpHeader::GetSerializedSize(void) const
 {
-  //reserved bytes for header
+  //HELLO, PING, PONG are 6 bytes individually
   return (2+4);
 }
 
@@ -207,7 +207,7 @@ CarpHeader::GetDAddr()
 uint8_t
 CarpHeader::GetPktCount()
 {
-  return m_numPkt; // Try to initialize this variable in the header.h file --> m_numPkt(4)
+  return m_numPkt; 
 }
 void
 CarpHeader::SetSAddr()

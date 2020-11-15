@@ -26,7 +26,7 @@ struct Neighbor
 class AquaSimCarp : public AquaSimRouting {
 public:
   AquaSimCarp();
-  std::map<Ptr<AquaSimNetDevice>, Neighbor>m_nodeNeighbor; // This is used to retrieve the neighbors of a node via the netdevice
+  std::map<Address, Neighbor>m_nodeNeighbor; // This is used to retrieve the neighbors of a node via the netdevice
   Neighbor* m_neigh; // This is a pointer to the struct holding the neighbors of each node
   static TypeId GetTypeId(void);
   virtual bool Recv(Ptr<Packet> packet);
@@ -60,6 +60,7 @@ public:
 
 private:
   Time wait_time;
+  Time hello_time = 1.0;
   AquaSimAddress sAddr;
   uint8_t m_hopCount;
   uint8_t m_num_pkt =4; // An assumption is made for the number of packets
@@ -70,7 +71,7 @@ private:
   double lq; 
   double alpha = 0.85;
   AquaSimAddress m_nextHop;
-  AquaSimNetDevice m_device;
+ // AquaSimNetDevice m_device;
   uint8_t m_nodeId =0;
 };  // class AquaSimCarp 
 } // End of ns3
