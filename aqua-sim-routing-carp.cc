@@ -19,7 +19,7 @@ using namespace ns3;
 NS_OBJECT_ENSURE_REGISTERED(AquaSimCarp);
 
 /* Carp protocol definition with wait_time constructor value */
-AquaSimCarp::AquaSimCarp() : wait_time(this, MilliSeconds (6.0))
+AquaSimCarp::AquaSimCarp() : wait_time(MilliSeconds (6.0))
 {
   NS_LOG_FUNCTION(this);
   m_rand = CreateObject<UniformRandomVariable> ();
@@ -52,10 +52,10 @@ void
 AquaSimCarp::SendHello()
 {
 	//AquaSimNetDevice sink = m_device->GetChannel()->GetNode(m_nodeId); // The need to initiate from the sink
-	Ptr<Packet> p = CreatePacket();
+	Ptr<Packet> p = Create<Packet>();
 	AquaSimHeader ash;
 	HelloHeader hh;
-	uint16_t hopcount = ash.GetNumForwards(); // This might need to be stored and mapped with the neighbors data
+	uint16_t hopCount = ash.GetNumForwards(); // This might need to be stored and mapped with the neighbors data
 	hh.SetHopCount(hopCount);  // Assumes the initial hop count of the sink is 0
 	// sAddr = AquaSimAddress::ConvertFrom(GetNetDevice()->GetAddress());
 	sAddr = RaAddr();
@@ -120,12 +120,12 @@ AquaSimCarp::SendPing ()
   Address pktNodeAddr = GetNetDevice()->GetAddress();
   
   // Extract the neighbors of the identified AquaSimNetDevice & iterate through all the neighbors of a node to send the PING packet
-  for (map<Address, Neighbor>::iterator iter = m_nodeNeighbor.begin();
+  for (std::map<Address, Neighbor>::iterator iter = m_nodeNeighbor.begin();
   iter!= m_nodeNeighbor.end(); iter++)
   {
 	if (iter->first == pktNodeAddr)
 	{
-		for (vector<AquaSimAddress>::iterator it = iter->second.begin(); it!= iter->second.end(); it++)
+		for (std::vector<AquaSimAddress>::iterator it = iter->second.begin(); it!= iter->second.end(); it++)
 		{  
 			ash.SetDAddr(*it);
 			ash.SetNextHop(*it);
@@ -231,7 +231,7 @@ AquaSimCarp::SetNextHop(AquaSimAddress src, vector<AquaSimAddress> nei)
 	uint8_t numForwards = 1;
 	
 	// Send 4 packets each to all neighbor nodes
-	for (vector<AquaSimAddress>::iterator it = nei.begin(); it!= nei.end();
+	for (std::vector<AquaSimAddress>::iterator it = nei.begin(); it!= nei.end();
 	it++)
 	{
 		pCount.insert(std::pair<AquaSimAddress, int>(*it,0)); // This map automatically keeps track of the ACKS from the neighbors for PSR estimation

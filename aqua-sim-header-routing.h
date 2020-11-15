@@ -116,7 +116,6 @@ class CarpHeader : public Header
 	double GetEnergy();
 	PacketType GetPacketType();
 	
-protected:
 	AquaSimAddress m_sAddr;
 	uint16_t m_hopCount;
 	uint8_t m_numPkt =4; // An assumption is made for the number of packets
@@ -129,37 +128,40 @@ protected:
 
 class HelloHeader : public CarpHeader
 {
+public:
 	HelloHeader();
 	virtual ~HelloHeader();
 	static TypeId GetTypeId();
-public:
+
 	 void Serialize (Buffer::Iterator start) const;
 	 uint32_t Deserialize (Buffer::Iterator start);
 	 TypeId GetInstanceTypeId(void) const;	
-}
+}; // class HelloHeader
 
 
 class PingHeader : public CarpHeader
 {
+public:
 	PingHeader();
 	virtual ~PingHeader();
 	static TypeId GetTypeId();
-public:
+
 	 void Serialize (Buffer::Iterator start) const;
 	 uint32_t Deserialize (Buffer::Iterator start);
 	 TypeId GetInstanceTypeId(void) const;
-}
+}; // class PingHeader
 
 class PongHeader : public CarpHeader
 {
+public:
 	PongHeader();
 	virtual ~PongHeader();
 	static TypeId GetTypeId();
-public:
+
 	 void Serialize (Buffer::Iterator start) const;
 	 uint32_t Deserialize (Buffer::Iterator start);
 	 TypeId GetInstanceTypeId(void) const;
-}
+}; // class PongHeader
 
 
  /**
