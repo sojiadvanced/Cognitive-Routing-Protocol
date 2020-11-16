@@ -133,8 +133,8 @@ DRoutingHeader::SetEntryNum(uint32_t entryNum)
 /*
 * Channel-aware Routing Protocol
 */
-NS_LOG_COMPONENT_DEFINE("CarpHeader");
-NS_OBJECT_ENSURE_REGISTERED(CarpHeader);
+//NS_LOG_COMPONENT_DEFINE("CarpHeader");
+//NS_OBJECT_ENSURE_REGISTERED(CarpHeader);
 
 CarpHeader::CarpHeader()
 {
@@ -154,33 +154,33 @@ CarpHeader::GetTypeId()
   return tid;
 }
 
-uint32_t
-CarpHeader::Deserialize(Buffer::Iterator start)
-{
-  Buffer::Iterator i = start;
-  m_sAddr = (AquaSimAddress)i.ReadU16();
-  m_dAddr = (AquaSimAddress)i.ReadU16();
-  m_numPkt = i.ReadU8();
-  m_hopCount = i.ReadU8();
-  return GetSerializedSize();
-}
+//uint32_t
+//CarpHeader::Deserialize(Buffer::Iterator start)
+//{
+  //Buffer::Iterator i = start;
+  //m_sAddr = (AquaSimAddress)i.ReadU16();
+  //m_dAddr = (AquaSimAddress)i.ReadU16();
+  //m_numPkt = i.ReadU8();
+  //m_hopCount = i.ReadU8();
+  //return GetSerializedSize();
+//}
 
 uint32_t
-CarpHeader::GetSerializedSize(void) const
+CarpHeader::GetSerializedSize(void)
 {
   //HELLO, PING, PONG are 6 bytes individually
   return (2+4);
 }
 
-void
-CarpHeader::Serialize(Buffer::Iterator start) const
-{
-  Buffer::Iterator i = start;
-  i.WriteU16(m_sAddr.GetAsInt());
-  i.WriteU16(m_dAddr.GetAsInt());
-  i.WriteU8(m_hopCount);
-  i.WriteU8(m_numPkt);
-}
+//void
+//CarpHeader::Serialize(Buffer::Iterator start)
+//{
+  //Buffer::Iterator i = start;
+  //i.WriteU16(m_sAddr.GetAsInt());
+  //i.WriteU16(m_dAddr.GetAsInt());
+  //i.WriteU8(m_hopCount);
+  //i.WriteU8(m_numPkt);
+//}
 
 void
 CarpHeader::Print(std::ostream &os) const
@@ -210,9 +210,9 @@ CarpHeader::GetPktCount()
   return m_numPkt; 
 }
 void
-CarpHeader::SetSAddr()
+CarpHeader::SetSAddr(AquaSimAddress srcAddr)
 {
-  m_sAddr = RaAddr();
+  m_sAddr = srcAddr;
 }
 void
 CarpHeader::SetDAddr(AquaSimAddress destAddr)
@@ -286,7 +286,7 @@ HelloHeader::Deserialize(Buffer::Iterator start)
   return GetSerializedSize();
 }
 TypeId
-HelloHeader::GetInstanceTypeId(void) const
+HelloHeader::GetInstanceTypeId(void)
 {
   return GetTypeId();
 }
@@ -322,7 +322,7 @@ PingHeader::Deserialize(Buffer::Iterator start)
   return GetSerializedSize();
 }
 TypeId
-PingHeader::GetInstanceTypeId(void) const
+PingHeader::GetInstanceTypeId(void)
 {
   return GetTypeId();
 }
@@ -366,7 +366,7 @@ PongHeader::Deserialize(Buffer::Iterator start)
   return GetSerializedSize();
 }
 TypeId
-PongHeader::GetInstanceTypeId(void) const
+PongHeader::GetInstanceTypeId(void)
 {
   return GetTypeId();
 }

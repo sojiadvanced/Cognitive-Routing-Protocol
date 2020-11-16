@@ -1,9 +1,10 @@
 /* Development of Channel-aware Routing Protocol using Aqua-Sim */
 
-#ifndef AQUA_SIM_ROUTING_CARP_H
-#define AQUA_SIM_ROUTING_CARP_H
+//#ifndef AQUA_SIM_ROUTING_CARP_H
+//#define AQUA_SIM_ROUTING_CARP_H
 
 #include "aqua-sim-routing.h"
+#include "aqua-sim-header-routing.h"
 #include "aqua-sim-address.h"
 #include "aqua-sim-datastructure.h"
 #include "aqua-sim-channel.h"
@@ -62,7 +63,7 @@ public:
   void ForwardData(Ptr<Packet> p);  // This is used to send packets to the mac layer for onward delivery to the destination or next hop
   virtual void DoDispose();
 
-private:
+// private:
   Time wait_time;
   Time hello_time = Seconds(1.0);
   AquaSimAddress sAddr;

@@ -82,12 +82,13 @@ private:
   */
 class CarpHeader : public Header
 {
+public:
 	CarpHeader();
 	virtual ~CarpHeader();
 	static TypeId GetTypeId();
 
-	virtual uint32_t GetSerializedSize(void) const;
-	virtual void Print (std::ostream &os) const;
+	virtual uint32_t GetSerializedSize(void); // Removed const
+	virtual void Print (std::ostream &os); // Removed const
 	
 	// Enum
 	enum PacketType
@@ -98,11 +99,11 @@ class CarpHeader : public Header
 	}m_pckType;
 	
 	// Setters
-	inline AquaSimAddress RaAddr() {return AquaSimAddress::ConvertFrom(GetNetDevice()->GetAddress()); }
-	void SetSAddr();
+	// inline AquaSimAddress RaAddr() {return AquaSimAddress::ConvertFrom(GetNetDevice()->GetAddress()); }
+	void SetSAddr(AquaSimAddress srcAddr);
 	void SetDAddr(AquaSimAddress destAddr);
 	void SetPktCount(uint8_t num_pkt);
-	void SetHopCount(uint8_t hopCount); // Set a default value of Zero (0) for the sink
+	void SetHopCount(uint16_t hopCount); // Set a default value of Zero (0) for the sink
 	void SetQueue(uint8_t queue);
 	void SetEnergy(double energy);
 	void SetPacketType(PacketType pType);
@@ -133,9 +134,9 @@ public:
 	virtual ~HelloHeader();
 	static TypeId GetTypeId();
 
-	 void Serialize (Buffer::Iterator start) const;
+	 void Serialize (Buffer::Iterator start); // Removed const
 	 uint32_t Deserialize (Buffer::Iterator start);
-	 TypeId GetInstanceTypeId(void) const;	
+	 TypeId GetInstanceTypeId(void);	// Removed const
 }; // class HelloHeader
 
 
@@ -146,9 +147,9 @@ public:
 	virtual ~PingHeader();
 	static TypeId GetTypeId();
 
-	 void Serialize (Buffer::Iterator start) const;
+	 void Serialize (Buffer::Iterator start); // Removed const
 	 uint32_t Deserialize (Buffer::Iterator start);
-	 TypeId GetInstanceTypeId(void) const;
+	 TypeId GetInstanceTypeId(void); // Removed const
 }; // class PingHeader
 
 class PongHeader : public CarpHeader
@@ -158,9 +159,9 @@ public:
 	virtual ~PongHeader();
 	static TypeId GetTypeId();
 
-	 void Serialize (Buffer::Iterator start) const;
+	 void Serialize (Buffer::Iterator start); // Removed const
 	 uint32_t Deserialize (Buffer::Iterator start);
-	 TypeId GetInstanceTypeId(void) const;
+	 TypeId GetInstanceTypeId(void); // Removed const
 }; // class PongHeader
 
 
