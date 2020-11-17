@@ -64,7 +64,8 @@ AquaSimCarp::SendHello()
 	ash.SetNumForwards(ash.GetNumForwards() + 1);
 	ash.SetNextHop(AquaSimAddress::GetBroadcast()); // This is used to broadcast the packet to all neighbors
 	p->AddHeader(ash);
-	Simulator::Schedule(Seconds(0.0),&AquaSimRouting::SendDown,this,p,ash.GetNextHop(),0.0);	
+	Simulator::Schedule(Seconds(0.0),&AquaSimRouting::SendDown,this,p,ash.GetNextHop(),0.0);
+		
 }
 
 /* Node receives Hello packet, updates its hop count and re-broadcast the packet */
@@ -232,11 +233,50 @@ AquaSimCarp::SendACK(Ptr<Packet> p)
 	SendPacket(MakeACK(DataSender)); // Check this method and reference the ALOHA sent by Dmitrii
 	p =0;
 }
+
+/* Train of packets received by neighbors for lq computation */
+void
+AquaSimCarp::RecvTrain(Ptr<Packet> p)
+{
+	AquaSimHeader ash;
+	CarpHeader crh;
+	p->RemoveHeader(ash);
+	p->RemoveHeader(crh);
+	if(crh.GetPacketType() == 2)
+	{
+		p->AddHeader(crh);
+		p->AddHeader(ash);
+		SendAck(p);
+	}
+	p =0;
+}
+
+/* ACK received by the sender for train of packets to determine the link quality estimate */
+void
+AquaSimCarp::RecvAck(Ptr<Packet> p)
+{
+	AquaSimHeader ash;
+	CarpHeader crh;
+	p->RemoveHeader(ash);
+	p->RemoveHeader(crh);
+	AquaSimAddress neighbor = ash.GetSAddr();
+	if(crh.GetPacketType() == 0)
+	{
+		for (std::map<AquaSimAddress, int>::iterator it = pCount.begin(); it!= pCount.end(); it++)
+		{
+			if(it->first == neighbor)
+			{
+				it->second = it->second + 1;
+			}
+		}
+	}
+}
 /* Method to select the next hop while awaiting the PONG response */
 void
 AquaSimCarp::SetNextHop(AquaSimAddress src, std::vector<AquaSimAddress> nei)
 {
 	
+	Ptr<Packet> p = Create<Packet>();
 	// vector<double_t>max_lq;
 	Time jitter = Seconds(m_rand->GetValue()*0.5);
 	uint16_t numForwards = 1;
@@ -252,7 +292,6 @@ AquaSimCarp::SetNextHop(AquaSimAddress src, std::vector<AquaSimAddress> nei)
 			// PacketType var = PacketType::LQ_DATA;
 			CarpHeader crh;
 			crh.SetPacketType(LQ_DATA);
-			Ptr<Packet> p = Create<Packet>();
 			ash.SetNumForwards(numForwards);
 			ash.SetSAddr(src);
 			ash.SetDAddr(*it);
@@ -260,49 +299,16 @@ AquaSimCarp::SetNextHop(AquaSimAddress src, std::vector<AquaSimAddress> nei)
 			p->AddHeader(crh);
 			p->AddHeader(ash);
 			Simulator::Schedule(jitter, &AquaSimRouting::SendDown, this, p, ash.GetNextHop(), jitter);	
-			// Find a way for a random delay
-			// Simulator::Schedule(jitter);
 		}
 	}
 	Time now = Simulator::Now();
 	while(true)
 	{
 		/* Neighbors receiving a train of packets from sender in order to process an ACK */
-		void
-		AquaSimCarp::RecvTrain(Ptr<Packet> p)
-		{
-			AquaSimAddress ash;
-			CarpHeader crh;
-			p->RemoveHeader(ash);
-			p->RemoveHeader(crh)
-			if(crh.GetPacketType == 2)
-			{
-				p->AddHeader(crh);
-				p->AddHeader(ash);
-				SendAck(p);
-			}
-			p =0;
-		}
+		
+		RecvTrain(p);
 		/* For everytime an Ack is received by a neighbor, the counter is increased */
-		void
-		AquaSimCarp::RecvAck(Ptr<Packet> p)
-		{
-			AquaSimAddress ash;
-			CarpHeader crh;
-			p->RemoveHeader(ash);
-			p->RemoveHeader(crh);
-			AquaSimAddress neighbor = ash.GetSAddr();
-			if(crh.GetPacketType == 0)
-			{
-				for (std::map<AquaSimAddress, int>::iterator it = pCount.begin(); it!= pCount.end(); it++)
-				{
-					if(it->first == neighbor)
-					{
-						it->second = it->second + 1;
-					}
-				}
-			}
-		}
+		RecvAck(p);
 		Time new_time = Simulator::Now();
 		if ( (new_time - now) > wait_time) // This allows the sender wait for 100 seconds before selecting the next relay node
 		{
