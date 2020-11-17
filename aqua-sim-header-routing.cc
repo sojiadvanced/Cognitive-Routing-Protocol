@@ -215,6 +215,11 @@ CarpHeader::SetSAddr(AquaSimAddress srcAddr)
   m_sAddr = srcAddr;
 }
 void
+CarpHeader::SetPktCount(uint8_t numPkt)
+{
+	m_numPkt = numPkt;
+}
+void
 CarpHeader::SetDAddr(AquaSimAddress destAddr)
 {
   m_dAddr = destAddr;

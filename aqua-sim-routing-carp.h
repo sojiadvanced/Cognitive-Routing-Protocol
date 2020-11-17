@@ -69,7 +69,7 @@ public:
   Time hello_time = Seconds(1.0);
   AquaSimAddress sAddr;
   uint8_t m_hopCount;
-  uint8_t m_num_pkt =4; // An assumption is made for the number of packets
+  uint8_t m_numPkt =4; // An assumption is made for the number of packets
   AquaSimAddress dAddr;
   double m_energy;
   double m_linkQuality;
@@ -77,7 +77,6 @@ public:
   double lq; 
   double alpha = 0.85;
   AquaSimAddress m_nextHop;
- // AquaSimNetDevice m_device;
   uint8_t m_nodeId =0;
 };  // class AquaSimCarp 
 } // End of ns3

@@ -36,6 +36,13 @@
 #define	DBRH_DATA_RECOVER	1
 #define	DBRH_BEACON	    	2
 
+enum PckType
+{
+		ACK=0,
+		DATA=1,
+		LQ_DATA=2
+};
+
 namespace ns3 {
 
  /**
@@ -94,12 +101,12 @@ public:
 	TypeId GetInstanceTypeId(void)const;	// Removed const
 	
 	// Enum
-	enum PckType
-	{
-		ACK,
-		DATA,
-		LQ_DATA
-	}m_pckType;
+	//enum PckType
+	//{
+		//ACK=0,
+		//DATA=1,
+		//LQ_DATA=2
+	//}m_pckType;
 	
 	// Setters
 	// inline AquaSimAddress RaAddr() {return AquaSimAddress::ConvertFrom(GetNetDevice()->GetAddress()); }
@@ -122,10 +129,11 @@ public:
 	
 	AquaSimAddress m_sAddr;
 	uint16_t m_hopCount;
-	uint8_t m_numPkt =4; // An assumption is made for the number of packets
+	uint8_t m_numPkt; // An assumption is made for the number of packets
 	AquaSimAddress m_dAddr;
 	double m_energy;
 	uint8_t m_queue;
+	PckType m_pckType;
 	
 }; // class CarpHeader
 
