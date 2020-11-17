@@ -34,7 +34,8 @@ public:
   std::map<Address, Neighbor>m_nodeNeighbor; // This is used to retrieve the neighbors of a node via the netdevice
   Neighbor* m_neigh; // This is a pointer to the struct holding the neighbors of each node
   static TypeId GetTypeId(void);
-  virtual bool Recv(Ptr<Packet> packet);
+  bool Recv(Ptr<Packet> packet, const Address &dest, uint16_t protocolNumber);
+  int64_t AssignStreams (int64_t stream);
   inline AquaSimAddress RaAddr() { return AquaSimAddress::ConvertFrom(GetNetDevice()->GetAddress()); }
   std::map<AquaSimAddress, int>pCount;
   
@@ -61,7 +62,7 @@ public:
   // Sending Data Packet
   Ptr<UniformRandomVariable> m_rand;
   void ForwardData(Ptr<Packet> p);  // This is used to send packets to the mac layer for onward delivery to the destination or next hop
-  virtual void DoDispose();
+  void DoDispose();
 
 // private:
   Time wait_time;

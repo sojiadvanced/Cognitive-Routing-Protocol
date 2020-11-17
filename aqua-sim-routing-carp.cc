@@ -11,12 +11,11 @@
 #include "ns3/mobility-model.h"
 #include "ns3/simulator.h"
 
-// #define IP_HDR_LEN 20
 using namespace ns3;
 
 /**** AquaSimCarp ****/
 
-NS_OBJECT_ENSURE_REGISTERED(AquaSimCarp);
+//NS_OBJECT_ENSURE_REGISTERED(AquaSimCarp);
 
 /* Carp protocol definition with wait_time constructor value */
 AquaSimCarp::AquaSimCarp() : wait_time(MilliSeconds (6.0))
@@ -89,9 +88,19 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 		 *  */
 		// Ptr<AquaSimNetDevice> pktNode = m_device->GetChannel()->GetDevice(m_nodeId);
 		Address pktNodeAddr = GetNetDevice()->GetAddress();
-        m_nodeNeighbor[pktNodeAddr] = m_neigh->m_neighborAddress.push_back(temp); // This maps the sender address and updates the vector holding the neighbor address of the interface
+		m_nodeNeighbor[pktNodeAddr].m_neighborAddress.push_back(temp); // This maps the sender address and updates the neighbors vector holding the neighbor address of the interface
+
+		//for (std::map<Address, Neighbor>::iterator iter = m_nodeNeighbor.begin();
+			//iter!= m_nodeNeighbor.end(); iter++)
+		//{
+			//if (iter->first == pktNodeAddr)
+			//{
+				//iter->second = m_neigh->m_neighborAddress.push_back(temp);
+			//}
+		//}
+        
 		ash.SetNumForwards(numForwards + 1);
-		ash.SetNextHop(AquaSimRouting::GetBroadcast());
+		ash.SetNextHop(AquaSimAddress::GetBroadcast());
 		p->AddHeader(hh);
 		p->AddHeader(ash);
 		Simulator::Schedule(Seconds(0.0),&AquaSimRouting::SendDown,this,p,ash.GetNextHop(),0.0);
@@ -149,7 +158,7 @@ AquaSimCarp::RecvPing (Ptr<Packet> p)
 void 
 AquaSimCarp::ForwardData(Ptr<Packet> p)
 {
-	AquaSimAddress ash;
+	AquaSimHeader ash;
 	p->RemoveHeader(ash);
 	p->AddHeader(ash);
 	Simulator::Schedule(Seconds(0.0),&AquaSimRouting::SendDown,this,p,ash.GetNextHop(),0.0);
@@ -199,9 +208,9 @@ AquaSimCarp::MakeACK(AquaSimAddress DataSender)
 	Ptr<Packet> p = Create<Packet>();
 	AquaSimHeader ash;
 	CarpHeader crh;
-	crh.SetPacketType(PacketType::ACK);
+	crh.SetPacketType(ACK);
 	crh.SetSAddr(RaAddr());
-	ash.SetSAddr(AquaSimAddress::ConvertFrom(m_device->GetAddress()); // This converts the interface address to AquaSimAddress
+	ash.SetSAddr(AquaSimAddress::ConvertFrom(m_device->GetAddress())); // This converts the interface address to AquaSimAddress
 	ash.SetNextHop(DataSender);
 	ash.SetDAddr(DataSender);
 	p->AddHeader(crh);
@@ -230,7 +239,7 @@ AquaSimCarp::SetNextHop(AquaSimAddress src, std::vector<AquaSimAddress> nei)
 	
 	// vector<double_t>max_lq;
 	Time jitter = Seconds(m_rand->GetValue()*0.5);
-	uint8_t numForwards = 1;
+	uint16_t numForwards = 1;
 	
 	// Send 4 packets each to all neighbor nodes
 	for (std::vector<AquaSimAddress>::iterator it = nei.begin(); it!= nei.end();
@@ -239,10 +248,10 @@ AquaSimCarp::SetNextHop(AquaSimAddress src, std::vector<AquaSimAddress> nei)
 		pCount.insert(std::pair<AquaSimAddress, int>(*it,0)); // This map automatically keeps track of the ACKS from the neighbors for PSR estimation
 		for (uint8_t i = 0; i< 4; i++)
 		{
-			AquaSimAddress ash;
-			PacketType var = PacketType::LQ_DATA;
+			AquaSimHeader ash;
+			// PacketType var = PacketType::LQ_DATA;
 			CarpHeader crh;
-			crh.SetPacketType(var);
+			crh.SetPacketType(LQ_DATA);
 			Ptr<Packet> p = Create<Packet>();
 			ash.SetNumForwards(numForwards);
 			ash.SetSAddr(src);
@@ -266,7 +275,7 @@ AquaSimCarp::SetNextHop(AquaSimAddress src, std::vector<AquaSimAddress> nei)
 			CarpHeader crh;
 			p->RemoveHeader(ash);
 			p->RemoveHeader(crh)
-			if(crh.GetPacketType == LQ_DATA)
+			if(crh.GetPacketType == 2)
 			{
 				p->AddHeader(crh);
 				p->AddHeader(ash);
@@ -283,7 +292,7 @@ AquaSimCarp::SetNextHop(AquaSimAddress src, std::vector<AquaSimAddress> nei)
 			p->RemoveHeader(ash);
 			p->RemoveHeader(crh);
 			AquaSimAddress neighbor = ash.GetSAddr();
-			if(crh.GetPacketType == PacketType::ACK)
+			if(crh.GetPacketType == 0)
 			{
 				for (std::map<AquaSimAddress, int>::iterator it = pCount.begin(); it!= pCount.end(); it++)
 				{
@@ -341,17 +350,23 @@ AquaSimCarp::RecvPong(Ptr<Packet> p)
 	
 	SetNextHop(srcAddr, srcNeighbor.m_neighborAddress);
 	AquaSimAddress nextHop = GetNextHop(); // This should return the relay node address
-	crh.SetPacketType(PacketType::DATA);
+	crh.SetPacketType(DATA);
 	ash.SetNextHop(nextHop);
 	p->AddHeader(crh);
 	p->AddHeader(ash);
 	  		
 	ForwardData(p); // This module would be worked upon	
 }
-
+int64_t
+AquaSimCarp::AssignStreams (int64_t stream)
+{
+  // NS_LOG_FUNCTION (this << stream);
+  m_rand->SetStream(stream);
+  return 1;
+}
 // This is used for receiving actual data packets
 bool
-AquaSimCarp::Recv(Ptr<Packet> p)
+AquaSimCarp::Recv(Ptr<Packet> p, const Address &dest, uint16_t protocolNumber)
 {
   AquaSimHeader ash;
   CarpHeader crh;
@@ -378,7 +393,7 @@ AquaSimCarp::Recv(Ptr<Packet> p)
 		p=0;
 		return false;
 	}
-	else if (dst == GetNetDevice()->GetAddress() && crh.GetPacketType == PacketType::DATA)
+	else if (dst == GetNetDevice()->GetAddress() && crh.GetPacketType() == 1)
 	{
 		// NS_LOG_INFO("AquaSimCarp::Recv address: " << 
 				//	GetNetDevice()->GetAddress() << " packet is delivered ");
@@ -393,4 +408,9 @@ AquaSimCarp::Recv(Ptr<Packet> p)
   ForwardData(p);
   return true;
 }
-
+void 
+AquaSimCarp::DoDispose()
+{
+  m_rand=0;
+  AquaSimRouting::DoDispose();
+}
