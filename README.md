@@ -13,10 +13,6 @@ This codebase represents the development of Channel-aware Routing Protocol (CARP
 # Installation
 The following carefully enumerate the set of instructions required to setup the CARP module in Aqua-Sim-NG as found below:
 
-# Usage
-The usage of the protocol is similar to existing routing modules in AquaSim where an object of the AquaSimHelper is used to install the routing module on all the nodes in the underwater environment topology.
-
-
 ```bash
 
 1. Download ns-3.27 via https://www.nsnam.org/release/ns-allinone-3.27.tar.bz2
@@ -27,6 +23,8 @@ The usage of the protocol is similar to existing routing modules in AquaSim wher
 6. Once the above is done, run a build process *./waf *
 ```
 
+# Usage
+The usage of the protocol is similar to existing routing modules in AquaSim where an object of the AquaSimHelper is used to install the routing module on all the nodes in the underwater environment topology.
 
 ```bash
 AquaSimHelper asHelper; //Declares an object of the AquaSimHelper
