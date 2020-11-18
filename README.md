@@ -40,9 +40,8 @@ You can reach out to the author of this project in case any form of assistance i
 
 Adesoji Bello: bello@mtu.edu | sojiadvanced@gmail.com
 
-# Roadmap
 
-#Contributing
+# Contributing
 
 This project is very much opened for contribution to ensure gradual improvements of the active research on routing in the underwater wireless sensor networks to enhance the performance of the system.
 
