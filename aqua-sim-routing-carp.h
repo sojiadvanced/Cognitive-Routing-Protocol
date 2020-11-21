@@ -46,9 +46,10 @@ public:
   void RecvPing (Ptr<Packet> packet);
 
   // Processing of Hello Packet
-  void SendHello ();
+  void SendHello (Ptr<Packet> p);
   void RecvHello (Ptr<Packet> packet);
-
+  bool ProcessHello ();
+  
   // Processing of Pong Packet
   void SendPong (Ptr<Packet> packet);
   void RecvPong (Ptr<Packet> packet); // Neighbors for each node are determined here

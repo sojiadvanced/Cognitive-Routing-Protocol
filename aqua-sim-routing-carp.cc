@@ -55,12 +55,10 @@ AquaSimCarp::GetTypeId(void)
  * Param:  void
  * Return: void
  *  */
-//Time initial_time = Simulator::Now();
-
 void
-AquaSimCarp::SendHello()
+AquaSimCarp::SendHello(Ptr<Packet> p)
 {
-	Ptr<Packet> p = Create<Packet>();
+	// Ptr<Packet> p = Create<Packet>();	
 	AquaSimHeader ash;
 	HelloHeader hh;
 	uint16_t hopCount = ash.GetNumForwards(); // This might need to be stored and mapped with the neighbors data
@@ -121,7 +119,26 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 	}
 }
 
-	
+Time initial_time = Simulator::Now();
+/* Introduction of a timer for the HELLO broadcast 
+ * Param:  void
+ * Return: bool (true | false)
+ * */
+bool
+AquaSimCarp::ProcessHello ()
+{
+   Ptr<Packet> p = Create<Packet>();	
+   while(true)
+   {
+		SendHello(p);
+		RecvHello(p);
+			if ((Simulator::Now() - initial_time) > hello_time)
+		{
+			return 1;
+		}
+	}
+} 
+
 
 
 /* To initiate a PING multicast to neighbors
@@ -208,7 +225,7 @@ AquaSimCarp::SendPong(Ptr<Packet> p)
 
 	// Used to set attributes of the PONG packet
 	p->AddHeader(ash);
-	// poh.SetHopCount(p); // Used to determine the hop count of the node from the sink
+	// poh.SetHopCount(p); // This is used if lq_y,z which is the best possible node of the neighbor were to be computed
 	p->RemoveHeader(ash);
 	poh.SetSAddr(RaAddr());  // Set the source of the packet
 	
