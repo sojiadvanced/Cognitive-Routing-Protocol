@@ -354,7 +354,7 @@ PongHeader::Serialize(Buffer::Iterator start)const
   i.WriteU16(m_sAddr.GetAsInt());
   i.WriteU16(m_dAddr.GetAsInt());
   i.WriteU8(m_queue);
-  i.WriteU8(m_energy); // Review how to serialize a data type of double
+  i.WriteU8((uint8_t) (m_energy * 1000.0)); // Serialization of a double data type
   i.WriteU8(m_hopCount);
  
 }
@@ -365,7 +365,7 @@ PongHeader::Deserialize(Buffer::Iterator start)
   m_sAddr = (AquaSimAddress)i.ReadU16();
   m_dAddr = (AquaSimAddress)i.ReadU16();
   m_queue = i.ReadU8();
-  m_energy= i.ReadU8(); // Review how to deserialize a data type of double
+  m_energy= ((double) i.ReadU8())/1000.0; // Deserialization of a double data type
   m_hopCount = i.ReadU8();
  
   return GetSerializedSize();
