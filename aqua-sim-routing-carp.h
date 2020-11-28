@@ -21,7 +21,9 @@ namespace ns3{
 
 struct Neighbor
 {
-	std::vector<AquaSimAddress> m_neighborAddress;
+	//std::vector<AquaSimAddress> m_neighborAddress;
+	std::map<AquaSimAddress, uint16_t> m_neighbor; // A container to store the address and hop count of neighbors from the sink
+	
 };
 
 //Neighbor() : m_neighborAddress(0)
@@ -44,9 +46,10 @@ public:
   void RecvPing (Ptr<Packet> packet);
 
   // Processing of Hello Packet
-  void SendHello ();
+  void SendHello (Ptr<Packet> p);
   void RecvHello (Ptr<Packet> packet);
-
+  bool ProcessHello ();
+  
   // Processing of Pong Packet
   void SendPong (Ptr<Packet> packet);
   void RecvPong (Ptr<Packet> packet); // Neighbors for each node are determined here
@@ -55,7 +58,7 @@ public:
   Ptr<Packet> MakeACK(AquaSimAddress src);
   void SendACK(Ptr<Packet> p);
   AquaSimAddress GetNextHop();
-  void SetNextHop(AquaSimAddress src, std::vector<AquaSimAddress> nei);
+  void SetNextHop(AquaSimAddress src, std::map<AquaSimAddress, uint16_t> nei);
   void RecvTrain(Ptr<Packet> p);
   void RecvAck(Ptr<Packet> p);
   

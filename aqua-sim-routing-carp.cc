@@ -56,15 +56,13 @@ AquaSimCarp::GetTypeId(void)
  * Return: void
  *  */
 void
-AquaSimCarp::SendHello()
+AquaSimCarp::SendHello(Ptr<Packet> p)
 {
-	//AquaSimNetDevice sink = m_device->GetChannel()->GetNode(m_nodeId); // The need to initiate from the sink
-	Ptr<Packet> p = Create<Packet>();
+	// Ptr<Packet> p = Create<Packet>();	
 	AquaSimHeader ash;
 	HelloHeader hh;
 	uint16_t hopCount = ash.GetNumForwards(); // This might need to be stored and mapped with the neighbors data
 	hh.SetHopCount(hopCount);  // Assumes the initial hop count of the sink is 0
-	// sAddr = AquaSimAddress::ConvertFrom(GetNetDevice()->GetAddress());
 	sAddr = RaAddr();
 	hh.SetSAddr(sAddr);
 	
@@ -90,19 +88,28 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 		p->RemoveHeader(ash);
 		p->RemoveHeader(hh);
 		uint16_t numForwards = ash.GetNumForwards();
-		
 		hh.SetHopCount(numForwards);
 		AquaSimAddress temp = hh.GetSAddr(); // Neighbor of the receiving node
-		
 		/* Two key things are required
 		 * 1. The need to obtain the AquaSimNetDevice of the current node with the packet
 		 * 2. The node id of the current node
 		 *  */
-		// Ptr<AquaSimNetDevice> pktNode = m_device->GetChannel()->GetDevice(m_nodeId);
 		Address pktNodeAddr = GetNetDevice()->GetAddress();
-		m_nodeNeighbor[pktNodeAddr].m_neighborAddress.push_back(temp); // This maps the sender address and updates the neighbors vector holding the neighbor address of the interface
-
-	
+		//m_nodeNeighbor[pktNodeAddr].m_neighborAddress.push_back(temp); // This maps the sender address and updates the neighbors vector holding the neighbor address of the interface
+	    uint16_t tempHopCount = numForwards;
+		
+		// HopCount check to store the least hop count of the node from the sink
+	    if ( m_nodeNeighbor[pktNodeAddr].m_neighbor[temp])
+	    {
+			if (tempHopCount < m_nodeNeighbor[pktNodeAddr].m_neighbor[temp])
+			{
+				m_nodeNeighbor[pktNodeAddr].m_neighbor[temp] = tempHopCount;
+			}
+		}
+		else
+		{
+				m_nodeNeighbor[pktNodeAddr].m_neighbor.insert({temp, numForwards});
+		}
 		ash.SetNumForwards(numForwards + 1);
 		ash.SetNextHop(AquaSimAddress::GetBroadcast());
 		p->AddHeader(hh);
@@ -111,6 +118,26 @@ AquaSimCarp::RecvHello(Ptr<Packet> p)
 		// SendHello(); Confirm if this method is needed
 	}
 }
+
+Time initial_time = Simulator::Now();
+/* Introduction of a timer for the HELLO broadcast 
+ * Param:  void
+ * Return: bool (true | false)
+ * */
+bool
+AquaSimCarp::ProcessHello ()
+{
+   Ptr<Packet> p = Create<Packet>();	
+   while(true)
+   {
+		SendHello(p);
+		RecvHello(p);
+			if ((Simulator::Now() - initial_time) > hello_time)
+		{
+			return 1;
+		}
+	}
+} 
 
 /* To initiate a PING multicast to neighbors
  * Param:  void
@@ -141,10 +168,10 @@ AquaSimCarp::SendPing ()
   {
 	if (iter->first == pktNodeAddr)
 	{
-		for (std::vector<AquaSimAddress>::iterator it = iter->second.m_neighborAddress.begin(); it!= iter->second.m_neighborAddress.end(); it++)
+		for (std::map<AquaSimAddress, uint16_t>::iterator it = iter->second.m_neighbor.begin(); it!= iter->second.m_neighbor.end(); it++)
 		{  
-			ash.SetDAddr(*it);
-			ash.SetNextHop(*it);
+			ash.SetDAddr(it->first);
+			ash.SetNextHop(it->first);
 			p->AddHeader(ash);
 			Simulator::Schedule(Seconds(0.0),&AquaSimRouting::SendDown,this,p,ash.GetNextHop(),Seconds(0.0));
 	  
@@ -196,7 +223,7 @@ AquaSimCarp::SendPong(Ptr<Packet> p)
 
 	// Used to set attributes of the PONG packet
 	p->AddHeader(ash);
-	// poh.SetHopCount(p); // Used to determine the hop count of the node from the sink
+	// poh.SetHopCount(p); // This is used if lq_y,z which is the best possible node of the neighbor were to be computed
 	p->RemoveHeader(ash);
 	poh.SetSAddr(RaAddr());  // Set the source of the packet
 	
@@ -305,7 +332,7 @@ AquaSimCarp::RecvAck(Ptr<Packet> p)
  * Return: void
  * */
 void
-AquaSimCarp::SetNextHop(AquaSimAddress src, std::vector<AquaSimAddress> nei)
+AquaSimCarp::SetNextHop(AquaSimAddress src, std::map<AquaSimAddress, uint16_t> nei)
 {
 	
 	Ptr<Packet> p = Create<Packet>();
@@ -314,10 +341,10 @@ AquaSimCarp::SetNextHop(AquaSimAddress src, std::vector<AquaSimAddress> nei)
 	uint16_t numForwards = 1;
 	
 	// Send 4 packets each to all neighbor nodes
-	for (std::vector<AquaSimAddress>::iterator it = nei.begin(); it!= nei.end();
+	for (std::map<AquaSimAddress, uint16_t>::iterator it = nei.begin(); it!= nei.end();
 	it++)
 	{
-		pCount.insert(std::pair<AquaSimAddress, int>(*it,0)); // This map automatically keeps track of the ACKS from the neighbors for PSR estimation
+		pCount.insert(std::pair<AquaSimAddress, int>(it->first,0)); // This map automatically keeps track of the ACKS from the neighbors for PSR estimation
 		for (uint8_t i = 0; i< 4; i++)
 		{
 			AquaSimHeader ash;
@@ -326,8 +353,8 @@ AquaSimCarp::SetNextHop(AquaSimAddress src, std::vector<AquaSimAddress> nei)
 			crh.SetPacketType(LQ_DATA);
 			ash.SetNumForwards(numForwards);
 			ash.SetSAddr(src);
-			ash.SetDAddr(*it);
-			ash.SetNextHop(*it);
+			ash.SetDAddr(it->first);
+			ash.SetNextHop(it->first);
 			p->AddHeader(crh);
 			p->AddHeader(ash);
 			Simulator::Schedule(jitter, &AquaSimRouting::SendDown, this, p, ash.GetNextHop(), jitter);	
@@ -394,7 +421,7 @@ AquaSimCarp::RecvPong(Ptr<Packet> p)
 	Neighbor srcNeighbor;
 	srcNeighbor = m_nodeNeighbor[pktNodeAddr]; // Confirm if this process extract the struct Neighbor from the map
 	
-	SetNextHop(srcAddr, srcNeighbor.m_neighborAddress);
+	SetNextHop(srcAddr, srcNeighbor.m_neighbor);
 	AquaSimAddress nextHop = GetNextHop(); // This should return the relay node address
 	crh.SetPacketType(DATA);
 	ash.SetNextHop(nextHop);
@@ -437,9 +464,6 @@ AquaSimCarp::Recv(Ptr<Packet> p, const Address &dest, uint16_t protocolNumber)
 			p=0;
 			return false;
 		}
-		// else if this is a packet I am originating, must add IP header
-		// else if (ash.GetNumForwards() == 0) // The node is the source of this packet
-		//	ash.SetSize(ash.GetSize());
 	}
 	else if( ash.GetNextHop() != AquaSimAddress::GetBroadcast() && ash.GetNextHop() != RaAddr() )
    {
