@@ -48,6 +48,7 @@ AquaSimCarp::GetTypeId(void)
 					TimeValue (Seconds (1.0)),
 					MakeTimeAccessor (&AquaSimCarp::hello_time),
 					MakeTimeChecker ());
+  cout<<"CARP Routing Protocl is in use "<< endl; 
   return tid;
 }
 

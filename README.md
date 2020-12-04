@@ -48,7 +48,9 @@ This project is very much opened for contribution to ensure gradual improvements
 # Authors & acknowledgment
 
 Adesoji Bello:  bello@mtu.edu
+
 Dr. Zhaohui Wang: Associate Professor at Michigan Technological University
+
 Dmitrii Dugaev: PhD Researcher at City University of New York
 
 # Licence

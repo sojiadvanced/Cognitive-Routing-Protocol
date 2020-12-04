@@ -26,11 +26,11 @@
 #include "ns3/log.h"
 #include "ns3/callback.h"
 #include "ns3/flow-monitor-helper.h"
-#include <fstream>
-#include "ns3/netanim-module.h"
+
 /*
+ * BroadCastMAC
  *
- * Network topology:
+ * String topology:
  * N ---->  N  -----> N -----> N* -----> S
  *
  */
@@ -38,29 +38,35 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE("OnandOffApp_CARPRouting");
+NS_LOG_COMPONENT_DEFINE("ASBroadcastMac");
+void ReceivePacket (Ptr<Socket> socket)
+{
+ Ptr<Packet> packet;
+ while (packet == socket->Recv ())
+{
+ NS_LOG_INFO("Received packet is size is:" << packet->GetSize () );
+}
+}
 
 int
-main ()
+main (int argc, char *argv[])
 {
-  double simStop = 200; //seconds
-  int nodes = 8;
- // int nodes;
+  
+  double simStop = 100; //seconds
+  int nodes = 3;
   int sinks = 1;
-  uint32_t m_dataRate = 500;
-  uint32_t m_packetSize = 100;
-  std::string asciiTraceFile = "carp_sim_static.asc";
+  uint32_t m_dataRate = 128;
+  uint32_t m_packetSize = 40;
+  //double range = 20;
 
-  LogComponentEnable ("OnandOffApp_CARPRouting", LOG_LEVEL_INFO);
+  LogComponentEnable ("ASBroadcastMac", LOG_LEVEL_INFO);
 
-  //To change on the fly
+  //to change on the fly
   CommandLine cmd;
- // cmd.AddValue ("simStop", "Length of simulation", simStop);
- cmd.AddValue ("nodes", "Amount of regular underwater nodes", nodes);
- // cmd.AddValue ("sinks", "Amount of underwater sinks", sinks);
- // cmd.AddValue ("m_packetSize", "Size of packets", m_packetSize);
- // cmd.AddValue ("m_dataRate", "Data rate of the channel", m_dataRate);
- // cmd.Parse(argc,argv);
+  cmd.AddValue ("simStop", "Length of simulation", simStop);
+  cmd.AddValue ("nodes", "Amount of regular underwater nodes", nodes);
+  cmd.AddValue ("sinks", "Amount of underwater sinks", sinks);
+  cmd.Parse(argc,argv);
 
   std::cout << "-----------Initializing simulation-----------\n";
 
@@ -73,14 +79,13 @@ main ()
   socketHelper.Install(nodesCon);
   socketHelper.Install(sinksCon);
 
-  //Establish layers using helper's pre-build settings
+  //establish layers using helper's pre-build settings
   AquaSimChannelHelper channel = AquaSimChannelHelper::Default();
   //channel.SetPropagation("ns3::AquaSimRangePropagation");
   AquaSimHelper asHelper = AquaSimHelper::Default();
   asHelper.SetChannel(channel.Create());
-  //asHelper.SetMac("ns3::AquaSimSFama");
-  asHelper.SetMac("ns3::AquaSimAloha");
-  asHelper.SetRouting("ns3::AquaSimCarp");
+  asHelper.SetMac("ns3::AquaSimBroadcastMac");
+  asHelper.SetRouting("ns3::AquaSimDBR");
 
   /*
    * Set up mobility model for nodes and sinks
@@ -99,7 +104,9 @@ main ()
       devices.Add(asHelper.Create(*i, newDevice));
 
       NS_LOG_DEBUG("Node:" << newDevice->GetAddress () << " position(x):" << boundry.x);
+      // NS_LOG_INFO("Interface Addr: " << devices.Get(i)->GetAddress() );
       boundry.x += 10;
+      //newDevice->GetPhy()->SetTransRange(range);
     }
 
   for (NodeContainer::Iterator i = sinksCon.Begin(); i != sinksCon.End(); i++)
@@ -109,18 +116,27 @@ main ()
       devices.Add(asHelper.Create(*i, newDevice));
       NS_LOG_DEBUG("Sink:" << newDevice->GetAddress () << " position(x):" << boundry.x);
       boundry.x += 10;
+      //newDevice->GetPhy()->SetTransRange(range);
     }
+
+  // Print out all interface addresses of nodes
+
+  // for (uint32_t i =0; i < nodesCon.GetN () + 1; i++)
+  //{
+
+  // NS_LOG_INFO("The interface address of node " << i << " is " << devices.Get(i)->GetAddress () );
+
+  //}
 
   mobility.SetPositionAllocator(position);
   mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-  
   mobility.Install(nodesCon);
   mobility.Install(sinksCon);
 
   PacketSocketAddress socket;
-  //socket.SetAllDevices(); // Set all nodes as sender asides the receiver
-  socket.SetSingleDevice(0); // Set a specific node as the sender which is ---> node 1
-  socket.SetPhysicalAddress (devices.Get(nodes)->GetAddress()); //Set dest to first sink
+  //socket.SetAllDevices();
+  socket.SetSingleDevice(0); // Set a specific outgoing physical address
+  socket.SetPhysicalAddress (devices.Get(3)->GetAddress()); //Set dest to first sink (nodes+1 device)
   socket.SetProtocol (0);
 
   OnOffHelper app ("ns3::PacketSocketFactory", Address (socket));
@@ -137,24 +153,22 @@ main ()
 
 
   Ptr<Node> sinkNode = sinksCon.Get(0);
-  TypeId psfid = TypeId::LookupByName ("ns3::PacketSocketFactory"); // Socket factory put into use
+  TypeId psfid = TypeId::LookupByName ("ns3::PacketSocketFactory");
 
   Ptr<Socket> sinkSocket = Socket::CreateSocket (sinkNode, psfid);
   sinkSocket->Bind (socket);
- 
-  std::cout << "-----------Running Simulation-----------\n";
-  Packet::EnablePrinting (); //for debugging purposes
+  sinkSocket->SetRecvCallback (MakeCallback (&ReceivePacket));
 
-  Simulator::Stop(Seconds(simStop+1));
-  std::ofstream ascii (asciiTraceFile.c_str());
-  if (!ascii.is_open()) {
-    NS_FATAL_ERROR("Could not open trace file.");
-  }
-  asHelper.EnableAsciiAll(ascii);
+   // Installation of Flow Monitor
+  Ptr<FlowMonitor> flowmonitor;
+  FlowMonitorHelper flowhelper;
+  flowmonitor = flowhelper.InstallAll();
+
+  Packet::EnablePrinting (); //for debugging purposes
+  std::cout << "-----------Running Simulation-----------\n";
+  Simulator::Stop(Seconds(simStop+2));
   Simulator::Run();
-  
-  asHelper.GetChannel()->PrintCounters();
- // AnimationInterface anim("animdcarpsim.xml");
+  flowmonitor->SerializeToXmlFile("onandoffapp_dbr.xml", true, true);
   Simulator::Destroy();
 
   return 0;
