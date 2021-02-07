@@ -3,7 +3,7 @@
 Implementation of a Channel-aware Routing Protocol in Network Simulator for Underwater Acoustic Communication Networking
 
 # Description
-This codebase represents the development of Channel-aware Routing Protocol (CARP) on Aqua-Sim-NG which is a cross-layer routing protocol paradigm that utilizes the link estimation among wirelesess sensor nodes to determine relay nodes used for packet forwarding.
+This codebase represents the development of Channel-aware Routing Protocol (CARP) on Aqua-Sim-NG which is a cross-layer routing protocol paradigm that utilizes the link estimation among wireless sensor nodes to determine relay nodes used for packet forwarding.
 
 # Requirements
 1. NS-3.26, NS-3.24
